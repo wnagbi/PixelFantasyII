@@ -1,162 +1,162 @@
 # Pixel Fantasy II
 
-Pixel Fantasy II is a pixel anime game based on Unity.  
+## 项目简介
 
-<!-- PROJECT SHIELDS -->
+`Pixel Fantasy II` 是一款基于 Unity 开发的 2D 像素风动作生存类项目。玩家在关卡中通过移动、攻击、击杀敌人、获取经验、升级武器和释放技能来推进战斗流程。
 
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+本项目当前主要作为学习与求职展示 Demo，重点展示单机核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地数据存储以及启动热更新加载流程。
 
-<!-- PROJECT LOGO -->
-<br />
+## 项目特色
 
-<p align="center">
-  <a href="https://github.com/Lingcoos/SPM_Project/">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
+- 像素风角色、敌人与道具表现。
+- 武器攻击、升级、冷却和数量成长。
+- 技能解锁、技能释放、冷却显示与特效生成。
+- 敌人刷怪、追踪、受伤、死亡与掉落流程。
+- 分数、技能解锁、设置项等本地 JSON 存储。
+- 启动场景加载条展示脚本更新、资源检查和资源下载进度。
 
-  <h3 align="center">Pixel Fantasy II</h3>
-  <p align="center">
-    A pixel anime game！
-    <br />
-    <a href="https://github.com/Lingcoos/SPM_Project"><strong>Project Document »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/Lingcoos/SPM_Project/releases">Game Demo</a>
-    ·
-    <a href="https://github.com/Lingcoos/SPM_Project/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/Lingcoos/SPM_Project/issues">New Feature</a>
-  </p>
+## 技术亮点
 
-</p>
+- **xLua 玩法逻辑热更新**  
+  使用 C# 作为 Unity 外壳，Lua 接管武器、技能、敌人、掉落、刷怪、玩家数值等可变规则。
 
+- **Lua Zip 服务器热更新流程**  
+  启动时从本地 HTTP 服务器请求 Lua manifest，对比版本后下载 zip，校验大小和 SHA256，再解压到 `persistentDataPath/LuaHotfix`。
 
- This README.md file is for developers.
- 
-## Content
+- **Addressables HTTP 资源热更新**  
+  使用 Addressables 远端 Catalog 和 Bundle，通过本地 HTTP 服务模拟商业化资源热更新流程。
 
-- [Pixel Fantasy II](#pixel-fantasy-ii)
-  - [Content](#content)
-    - [Quick Guide](#quick-guide)
-          - [Environment](#environment)
-          - [**Starting**](#starting)
-    - [File Tree](#file-tree)
-    - [Develop Guide](#develop-guide)
-    - [Develop Platform](#develop-platform)
-    - [Framework](#framework)
-    - [Contributors](#contributors)
-      - [Join Us Now](#join-us-now)
-    - [Version Control](#version-control)
-    - [Author](#author)
-    - [License](#license)
-    - [Acknowledgment](#acknowledgment)
+- **Prefab / Sprite / VFX 资源热更新**  
+  技能图标、技能特效、武器投射物、敌人和掉落物 Prefab 可通过 Addressables key 加载更新，加载失败时回退 Inspector 原引用。
 
-### Quick Guide
-Please Refer [Develop Guide](#develop-guide)
-**Please develop in `dev` branch!**
+- **Start 场景启动加载流程**  
+  `start.unity` 作为首场景，展示热更新进度并在完成后进入 `title.unity`。
 
+- **JSON 本地数据存储**  
+  使用 `Newtonsoft.Json` 保存游戏设置、分数和技能解锁状态，替代部分旧 PlayerPrefs 数据。
 
-###### Environment
+- **对象池与 Addressables Prefab 替换**  
+  对敌人、掉落物等高频对象保留对象池生成流程，同时支持通过 Addressables 替换池内 Prefab。
 
-1. Unity 2022.3.55f1
-2. Visual Studio 2022
+- **C# Host + Lua Rule 架构**  
+  C# 保留 MonoBehaviour 生命周期、Inspector 引用、对象池、动画、物理、UI 和资源加载；Lua 负责可变玩法规则。
 
-###### **Starting**
+- **热更新失败 fallback**  
+  Lua、Addressables 或服务器不可用时不会阻塞游戏启动，系统会继续使用本地旧版本或包内默认资源。
 
-1. Download [Unity](https://unity.com/)
-2. Clone the repo
-```sh
-git clone https://github.com/Lingcoos/SPM_Project.git
-```
-3. Use Unity to open the project
+## 热更新系统
 
-### File Tree
+当前启动流程：
 
-```
-filetree 
-├── ARCHITECTURE.md
-├── LICENSE.txt
-├── README.md
-├── /Assets/
-├────── /Animation/
-├────── /Animator/
-├────── /Language/
-├────── /Materials/
-├────── /Prefabs/
-├────── /Scenes/
-├────── /Scripts/
-├────── /.../
-├── /Packages/
-├── /ProjectSettings/
-└── /images/
+```text
+start
+  -> 检查 Lua Zip 热更新
+  -> 初始化 xLua
+  -> 检查 Addressables Catalog
+  -> 下载 gameplay 资源
+  -> 进入 title
 ```
 
-### Develop Guide
+热更新分工：
 
-Please read [ARCHITECTURE.md](https://github.com/Lingcoos/SPM_Project/blob/master/ARCHITECTURE.md) to check the architecture of the project.
+```text
+C#             Unity 生命周期、资源加载、对象池、UI、物理、动画
+Lua            玩法规则、数值成长、武器逻辑、敌人规则、掉落规则
+Addressables   Prefab、Sprite、VFX、资源引用
+JSON           本地设置、分数、技能解锁状态
+```
 
-### Develop Platform
+## 项目结构
 
-Windows
+```text
+Assets/
+  Lua/                         Lua 配置与玩法规则源码
+  Scripts/
+    Hotfix/                    xLua 热更新基础设施与 C# Host
+    Controller/                游戏流程、UI、设置、存档、启动加载
+    ObjPool/                   对象池
+    Weapon/                    武器表现与控制器
+    PickUp/                    掉落物逻辑
+  Scenes/
+    start.unity                启动加载场景
+    title.unity                标题与主菜单场景
+    level1*.unity              关卡场景
+  StreamingAssets/
+    Lua/                       包内默认 Lua 文件
+  AddressableAssetsData/       Addressables 配置
 
-### Framework
+AddressablesRemote/            本地资源热更新输出目录示例
+Packages/                      Unity Package 配置
+ProjectSettings/               Unity 项目设置
+```
 
-- [Mirror](https://github.com/MirrorNetworking/Mirror)
+## 运行环境
 
+- Unity `2022.3.55f1`
+- Visual Studio 2022
+- Windows
+- xLua
+- Addressables
+- Newtonsoft.Json
+- DOTween
+- Unity Input System
+- Unity Localization
 
-### Contributors
+## 启动与测试方式
 
-+ [WEI TAO](https://github.com/Lingcoos)
-+ [Wang Zhenghan](https://github.com/wnagbi)
-+ [Qiu Zixi](https://github.com/vousmevoyez7)
+1. 使用 Unity `2022.3.55f1` 打开项目。
+2. 确认 Build Settings 第一场景为：
 
-#### Join Us Now
+```text
+Assets/Scenes/start.unity
+```
 
-Contributions make the open source community a great place to learn, inspire, and create. Any contribution you make is **very much appreciated**.
+3. 启动本地热更新 HTTP 服务：
 
+```powershell
+python D:\AddressablesServerRoot\start_addressables_server.py
+```
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+4. 在 Unity 中 Play，或打包后运行客户端。
+5. 游戏启动后会先进入 `start` 加载场景，完成 Lua 与 Addressables 检查后进入 `title`。
 
-### Version Control
+## 本地热更新测试
 
-This project uses `Git` for version management. You can view the currently available versions in the `repository`.
+本项目使用本地 HTTP 服务器模拟远端热更新服务器。
 
-For beginners, you can also use `Github Desktop` for visual management.
-> Again, don't develop in the `main` branch! Be sure to switch to the `dev` branch for development!
+服务器根目录：
 
-### Author
+```text
+D:\AddressablesServerRoot
+```
 
-+ [WEI TAO](https://github.com/Lingcoos)
+Addressables 资源测试地址示例：
 
-  *You can also see all the developers involved in the project in the Contributors list.*
+```text
+http://127.0.0.1:18080/AddressablesRemote/StandaloneWindows64/catalog_1.0.hash
+```
 
-### License
+Lua 热更新 manifest 地址示例：
 
+```text
+http://127.0.0.1:18080/LuaRemote/lua_manifest.json
+```
 
-This project is licensed under the GPL license, see [LICENSE.txt](https://github.com/shaojintian/Best_README_template/blob/master/LICENSE) for details.
+测试思路：
 
-### Acknowledgment
+- 修改 Lua 文件后重新构建 Lua 热更新 zip，不重新打包客户端，重启游戏验证玩法逻辑变化。
+- 修改 Addressable Prefab、Sprite 或 VFX 后重新 Build Addressables，不重新打包客户端，重启游戏验证资源变化。
+- 关闭服务器后启动游戏，验证 fallback 是否正常进入游戏。
 
-- Li Zixu (Evaluation Team)
+## 参与人员
 
+- **王正瀚**：程序开发、系统架构、热更新改造、存档系统、资源加载、玩法逻辑接入。
+- **魏涛**：美术资源。
 
-<!-- links -->
-[your-project-path]:Lingcoos/SPM_Project
-[contributors-shield]: https://img.shields.io/github/contributors/Lingcoos/SPM_Project.svg?style=flat-square
-[contributors-url]: https://github.com/Lingcoos/SPM_Project/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Lingcoos/SPM_Project.svg?style=flat-square
-[forks-url]: https://github.com/Lingcoos/SPM_Project/network/members
-[stars-shield]: https://img.shields.io/github/stars/Lingcoos/SPM_Project.svg?style=flat-square
-[stars-url]: https://github.com/Lingcoos/SPM_Project/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Lingcoos/SPM_Project.svg?style=flat-square
-[issues-url]: https://img.shields.io/github/issues/Lingcoos/SPM_Project.svg
-[license-shield]: https://img.shields.io/github/license/Lingcoos/SPM_Project.svg?style=flat-square
-[license-url]: https://github.com/Lingcoos/SPM_Project/blob/main/LICENSE
+## 备注
+
+- 本项目当前重点为单机核心玩法与热更新系统展示。
+- 项目中保留的 Mirror / 联机相关内容不是当前主线展示内容。
+- 本地 HTTP 服务器用于模拟商业化热更新流程，不代表已经接入正式线上服务器或 CDN。
+- Addressables 可以热更新资源和 Prefab 序列化数据，但不能热更新客户端不存在的 C# 代码。
+- C# 函数逻辑如需热更新，需要提前设计为 C# Host 调 Lua Rule 的形式。
