@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -6,6 +6,8 @@ using UnityEngine.Events;
 using UnityEngine.Localization;
 using UnityEngine.UI;
 
+// 本局计时器。
+// 负责显示生存时间，到达 tpTime 时触发通关/传送事件，并把时间保存给结算界面。
 public class TimeController : MonoBehaviour
 {
     public Text text;
@@ -16,22 +18,26 @@ public class TimeController : MonoBehaviour
     public LocalizedString nameString;
     void Start()
     {
+        // 记录本局开始时间。
         startTime = Time.time;
         nameString.TableEntryReference = "TimeText";
     }
     private void Update()
     {
+        // 到达目标生存时间时触发外部绑定事件。
         if ((int)runTime == tpTime)
         {
-            //Debug.Log("����ɹ�");
+            //Debug.Log("生存成功");
             tpEvent.Invoke();
         }
         else 
         {
-            runTime = Time.time - startTime; // ���㵱ʱ��Ϸʱ��
+            // 计算从本局开始到现在经过的时间。
+            runTime = Time.time - startTime; // 计算当时游戏时间
             string minutes = ((int)runTime / 60).ToString("00");
             string seconds = (runTime % 60).ToString("00");
             text.text = $"{nameString.GetLocalizedString()} : " + minutes + " : " + seconds;
+            // 结算界面从 PlayerPrefs 读取这个时间。
             PlayerPrefs.SetFloat("Time", runTime);
         }
        

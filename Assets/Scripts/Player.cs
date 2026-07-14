@@ -17,6 +17,8 @@ public enum PlayerStateType
 /// <summary>
 /// This class is responsible for the player's movement, health, and state transitions.
 /// </summary>
+// 玩家主体控制器。
+// 负责输入移动、动画参数、状态切换、受伤事件，并把实时数值同步到 PlayerData。
 public class Player : MonoBehaviour
 {
     [Header("Player")]
@@ -59,6 +61,7 @@ public class Player : MonoBehaviour
         states.Add(PlayerStateType.Hurt, new PlayerHurtState(this));
         states.Add(PlayerStateType.Die, new PlayerDieState(this));
         TransitionState(PlayerStateType.Idle);
+        
     }
 
     
@@ -118,9 +121,16 @@ public class Player : MonoBehaviour
     }
     public void GetDamage(float damage) 
     {
+        // 玩家受伤先走 Lua 伤害公式，例如护盾、减伤、难度修正等。
+        // Lua 返回失败时继续使用 C# 传入的原始 damage。
+        if (LuaConfig.TryCallFloat("hotfix.player.player_rule", "AdjustDamage", this, damage, out float luaDamage))
+        {
+            damage = luaDamage;
+        }
+
         if (damage <= 0)
             return;
-        PlayerData.getInstance().CurrentHealth -= damage;
+        PlayerData.getInstance().TakeDamage(damage);
         onHurt?.Invoke();
         if (PlayerData.getInstance().CurrentHealth <= 0) 
         {

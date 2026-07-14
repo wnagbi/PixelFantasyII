@@ -3,26 +3,39 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class MissileController : WeaponController
+// 导弹武器控制器。
+// 运行时攻击和升级优先交给 hotfix.weapon.missile.lua，Lua 失败时保留下面的 C# 回退逻辑。
+public class MissileController : HotfixWeaponController
 {
     
     public float missileAttackRangeOut;
     public float missileAttackRangeIn;
 
+    protected override string GetDefaultLuaModuleName()
+    {
+        // 如果 Inspector 没填 luaModuleName，默认加载这个 Lua 文件。
+        return "hotfix.weapon.missile";
+    }
 
     protected override void Attack()
     {
-        base.Attack();
-        for (int i = 0; i < count; i++) 
+        // 导弹发射优先走 Lua 的 OnAttack(host)。
+        if (TryLuaAttack())
         {
-            float radius = Random.Range(missileAttackRangeIn, missileAttackRangeOut);
-            float angle = Random.Range(0f, 2f * Mathf.PI);
-            float x = radius * Mathf.Cos(angle);
-            float y = radius * Mathf.Sin(angle);
-            Vector2 attackPosition = new Vector2(x, y);            
-            GameObject missle = Instantiate(prefab, (Vector2)transform.position+ attackPosition, Quaternion.identity);            
-
+            return;
         }
+
+        base.Attack();
+        // for (int i = 0; i < count; i++) 
+        // {
+        //     float radius = Random.Range(missileAttackRangeIn, missileAttackRangeOut);
+        //     float angle = Random.Range(0f, 2f * Mathf.PI);
+        //     float x = radius * Mathf.Cos(angle);
+        //     float y = radius * Mathf.Sin(angle);
+        //     Vector2 attackPosition = new Vector2(x, y);            
+        //     GameObject missle = Instantiate(prefab, (Vector2)transform.position+ attackPosition, Quaternion.identity);            
+
+        // }
         
 
     }
@@ -30,6 +43,12 @@ public class MissileController : WeaponController
 
     public void levelUp()
     {
+        // 升级优先走 Lua 的 OnLevelUp(host)，方便热更伤害、CD、发射数量和满级规则。
+        if (TryLuaLevelUp())
+        {
+            return;
+        }
+
         switch (level)
         {
             case 0:     

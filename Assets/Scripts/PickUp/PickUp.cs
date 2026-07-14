@@ -1,10 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+// 拾取物类型。
 public enum PickUpTpye 
 {
     Exp, Blood
 }
+// 单个拾取物行为。
+// 负责吸附玩家、碰撞拾取、增加经验或回复生命，并支持 Lua 配置拾取距离/速度/数值。
 public class PickUp : MonoBehaviour
 {
     public AudioClip a;
@@ -32,6 +35,13 @@ public class PickUp : MonoBehaviour
             float scale = Random.Range(1, 2f);
             transform.localScale = new Vector3(scale,scale,scale);
         }
+
+        // 拾取物每次从对象池启用时，从 Lua 配置刷新吸附距离和移动速度。
+        // 这样不同类型拾取物可以在不改 C# 的情况下调整手感。
+        float luaDistance = LuaConfig.GetFloat("config.pickup_config", pickUpTpye.ToString(), "pickup_distance", pickUpDistance);
+        float luaSpeed = LuaConfig.GetFloat("config.pickup_config", pickUpTpye.ToString(), "move_speed", moveSpeed);
+        pickUpDistance = luaDistance;
+        moveSpeed = luaSpeed;
     }
     private void Start()
     {
@@ -58,13 +68,27 @@ public class PickUp : MonoBehaviour
         {
             case PickUpTpye.Exp:
                 AudioController.instance.PlaySE(a);
-                PlayerData.getInstance().Exp += (int)value;
+                float expValue = value;
+
+                // 经验值交给 Lua 修正，例如按关卡时间、倍率 Buff、难度调整。
+                if (LuaConfig.TryCallFloat("hotfix.pickup.pickup_rule", "GetExpValue", this, value, out float luaExpValue))
+                {
+                    expValue = luaExpValue;
+                }
+                PlayerData.getInstance().Exp += Mathf.RoundToInt(expValue);
                 //Debug.Log("Exp: "+ PlayerData.getInstance().Exp);          
                 break;
             case PickUpTpye.Blood:
                 if (PlayerData.getInstance().CurrentHealth == PlayerData.getInstance().CurrentMaxHealth)
                     return;
-                PlayerData.getInstance().CurrentHealth += potionHealing;
+                float healValue = potionHealing;
+
+                // 回复量交给 Lua 修正，Lua 失败时使用 Inspector 中的 potionHealing。
+                if (LuaConfig.TryCallFloat("hotfix.pickup.pickup_rule", "GetHealValue", this, potionHealing, out float luaHealValue))
+                {
+                    healValue = luaHealValue;
+                }
+                PlayerData.getInstance().AddHealth(healValue);
                 break;
 
 

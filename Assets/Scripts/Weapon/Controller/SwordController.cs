@@ -4,51 +4,58 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-public class SwordController : WeaponController
+// 飞剑武器控制器。
+// 生成飞剑、升级重建等规则优先由 hotfix.weapon.sword.lua 接管；寻敌移动仍保留在 C# 中执行。
+public class SwordController : HotfixWeaponController
 {
     public Vector3 offset;
     private Transform sword;
-    public Vector3 target;
+
     public bool isRotating = true;
 
     [SerializeField]private List<Transform> swords = new List<Transform>(); 
     [SerializeField]private List<Transform> enemies = new List<Transform>(); 
-    [SerializeField] private List<Transform> availableTargets = new List<Transform>(); 
+    
 
     protected override void Start()
     {
-        Refresh();
+        base.Start();
     }
     protected override void Refresh()
     {
-        base.Start();
+        InitializeWeapon();
         for (int i = 0; i < count; i++)
         {
             SwordGenerator();
         }
-        UpdateEnemyList();
+        
 
     }
     protected override void Attack()
     {
-
+        // 当前飞剑攻击逻辑是 Lua 优先；没有 Lua 时这里不会额外执行父类攻击。
+        TryLuaAttack();
 
     }
     protected override void Update()
     {
         base.Update();
+        if (!IsHotfixStartReady)
+        {
+            return;
+        }
         
         for (int i = 0; i < count; i++) 
         {
+            if (i >= swords.Count || swords[i] == null)
+            {
+                continue;
+            }
+
             Transform sword =swords[i];
             Transform target = sword.GetComponent<Sword>().enemy;
-            if (target == null || target.GetComponent<Enemy>().isDie || transform.position == target.position)
+            if (target.gameObject.activeSelf == false)
             {
-                //if (target.GetComponent<Enemy>().isDie)
-                //{
-                //    Debug.Log("����ת��");
-                //}
-                UpdateEnemyList();
                 AssignTarget(sword);
 
             }
@@ -62,34 +69,15 @@ public class SwordController : WeaponController
     }
     private void AssignTarget(Transform sword)
     {
-        if (availableTargets.Count > 0) 
-        {
-            Transform target = availableTargets[Random.Range(0, availableTargets.Count - 1)];
-            availableTargets.Remove(target);
-            sword.GetComponent<Sword>().enemy = target;
-            
-        }
-    }
-    public void UpdateEnemyList() //���µ����б�
-    {
-        Enemy[] enemyArray = FindObjectsOfType<Enemy>();
 
-        enemies.Clear();
-        availableTargets.Clear();
-        foreach (Enemy enemy in enemyArray)
-        {
-            enemies.Add(enemy.transform);
-            availableTargets.Add(enemy.transform);
-        }
-        for (int i = enemies.Count - 1; i >= 0; i--) 
-        {
-            if (enemies[i] == null) 
-            {
-                enemies.RemoveAt(i);
-                availableTargets.RemoveAt(i);
-            }
-        }
+        // Transform target = availableTargets[Random.Range(0, availableTargets.Count - 1)];
+        List<Enemy> list = EnemyManager.Instance.GetEnemiesList();
+        Transform target = list[Random.Range(0, list.Count - 1)].transform;
+        sword.GetComponent<Sword>().enemy = target;
+            
+        
     }
+    
     public void MoveObject(Transform sword,Transform target)
     {
 
@@ -106,12 +94,51 @@ public class SwordController : WeaponController
     }
     public void SwordGenerator()
     {
-        sword = Instantiate(prefab, transform.position + offset, prefab.transform.rotation).transform;
+        GameObject sourcePrefab = GetRuntimePrefab(prefab);
+        if (sourcePrefab == null)
+        {
+            return;
+        }
+
+        GameObject swordObj = InstantiateRuntimePrefab(transform.position + offset, sourcePrefab.transform.rotation);
+        if (swordObj == null)
+        {
+            return;
+        }
+
+        sword = swordObj.transform;
         swords.Add(sword);
 
     }
+
+    public void RebuildSwords()
+    {
+        // 暴露给 Lua：升级后销毁旧飞剑并按当前 count 重新生成。
+        for (int i = 0; i < swords.Count; i++)
+        {
+            if (swords[i] != null)
+            {
+                Destroy(swords[i].gameObject);
+            }
+        }
+
+        swords.Clear();
+        Refresh();
+    }
+
+    protected override void OnHotfixStartReady()
+    {
+        RebuildSwords();
+    }
+
     public void levelUp()
     {
+        // 升级优先交给 Lua，Lua 失败时使用下面的 C# 默认升级表。
+        if (TryLuaLevelUp())
+        {
+            return;
+        }
+
         switch (level)
         {
             case 0:
@@ -147,6 +174,12 @@ public class SwordController : WeaponController
             swords.Clear();
         Refresh();
 
+    }
+
+    protected override string GetDefaultLuaModuleName()
+    {
+        // 默认 Lua 模块路径。
+        return "hotfix.weapon.sword";
     }
 }
 

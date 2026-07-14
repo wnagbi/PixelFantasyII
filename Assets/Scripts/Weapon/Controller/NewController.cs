@@ -2,34 +2,73 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NewController : WeaponController
+// NewController 对应一个环绕类武器样板。
+// 攻击旋转、升级数量和重建逻辑优先由 hotfix.weapon.new_weapon.lua 接管。
+public class NewController : HotfixWeaponController
 {
     public GameObject rotationPoint;
 
     protected override void Start()
     {
         base.Start();
+    }
+
+    protected override void Attack()
+    {
+        if (TryLuaAttack())
+        {
+            return;
+        }
+
+        base.Attack();
+        rotationPoint.transform.rotation = Quaternion.Euler(0f, 0f, rotationPoint.transform.rotation.eulerAngles.z + (speed * Time.deltaTime));
+    }
+
+    protected override void Refresh()
+    {
+    }
+
+    public void RebuildOrbitObjects()
+    {
+        ClearChildren(rotationPoint != null ? rotationPoint.transform : transform.GetChild(0));
+        SpawnOrbitObjects();
+    }
+
+    protected override void OnHotfixStartReady()
+    {
+        RebuildOrbitObjects();
+    }
+
+    private void SpawnOrbitObjects()
+    {
+        if (rotationPoint == null)
+        {
+            return;
+        }
+
         for (int i = 0; i < count; i++)
         {
             Vector3 rota = Vector3.forward * 360 * i / count;
-            Transform tornado = Instantiate(prefab, rotationPoint.transform.position, Quaternion.identity, rotationPoint.transform).transform;
-            tornado.Rotate(rota);
-            tornado.Translate(tornado.up * 5f, Space.World);
-            tornado.rotation = Quaternion.Euler(new Vector3(0, 0, 0));
+            GameObject orbitObj = InstantiateRuntimePrefab(rotationPoint.transform.position, Quaternion.identity, rotationPoint.transform);
+            if (orbitObj == null)
+            {
+                continue;
+            }
+
+            Transform orbit = orbitObj.transform;
+            orbit.Rotate(rota);
+            orbit.Translate(orbit.up * 5f, Space.World);
+            orbit.rotation = Quaternion.Euler(new Vector3(0, 0, 0));
         }
     }
-    protected override void Attack()
-    {
-        base.Attack();
-        rotationPoint.transform.rotation = Quaternion.Euler(0f, 0f, rotationPoint.transform.rotation.eulerAngles.z + (speed * Time.deltaTime));
 
-    }
-    protected override void Refresh()
-    {
-
-    }
     public void levelUp()
     {
+        if (TryLuaLevelUp())
+        {
+            return;
+        }
+
         switch (level)
         {
             case 0:
@@ -58,10 +97,12 @@ public class NewController : WeaponController
                 weapon.weaponLevel++;
                 break;
         }
-        for (int i = 0; i < transform.GetChild(0).childCount; i++)
-        {
-            Destroy(transform.GetChild(0).GetChild(i).gameObject);
-        }
-        Refresh();
+
+        RebuildOrbitObjects();
+    }
+
+    protected override string GetDefaultLuaModuleName()
+    {
+        return "hotfix.weapon.new_weapon";
     }
 }

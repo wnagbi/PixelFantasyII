@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Weapon))]
+// 所有武器控制器的基础类。
+// 管理通用武器数值、冷却计时和攻击入口；具体武器通过 override Attack/Refresh/CDTime 扩展行为。
 public class WeaponController : MonoBehaviour
 {
     [Header("Weapon Stats")]
@@ -19,11 +21,19 @@ public class WeaponController : MonoBehaviour
 
     protected virtual void Start()
     {
+        // 子类 Start 通常先调用 base.Start()，确保 weapon 和冷却初始化完成。
+        InitializeWeapon();
+    }
+
+    protected void InitializeWeapon()
+    {
+        // 读取同物体上的 Weapon 数据组件，并把当前冷却设为初始 CD。
         currentCooldown =cooldownDuration;
         weapon = GetComponent<Weapon>();
     }
     protected virtual void Update() 
     {
+        // 同步 Weapon 数据组件里的等级，供 UI/选择界面显示。
         weapon.weaponLevel = level;
         currentCooldown -= Time.deltaTime;
         if (currentCooldown <= 0f)
@@ -34,18 +44,20 @@ public class WeaponController : MonoBehaviour
     }
     protected virtual void CDTime() 
     {
-
+        // 冷却期间的行为钩子。环绕类武器会在这里旋转。
     }
     protected virtual void Refresh() 
     {
-        
+        // 数量/等级变化后重建武器表现的钩子。
     }
     protected virtual void Attack() 
     {
+        // 默认攻击只重置冷却；具体武器负责真正生成子弹或执行攻击。
         currentCooldown = cooldownDuration;
     }
     protected virtual void OnEnable()
     {
+        // 武器第一次获得/启用时等级加一。
         level++;
     }
   

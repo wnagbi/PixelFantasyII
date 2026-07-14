@@ -1,10 +1,11 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
 using UnityEngine.UI;
 
-
+// 结算界面控制器。
+// 从 PlayerPrefs 读取本局时间和击杀数，本局得分累加到 save_data.json。
 public class GameOverController : MonoBehaviour
 {
     public int scoreX;
@@ -18,17 +19,24 @@ public class GameOverController : MonoBehaviour
 
     private void Awake()
     {
+        // 读取 TimeController 保存的本局生存时间，并格式化成 mm:ss。
         float time = PlayerPrefs.GetFloat("Time");
         string minutes = ((int)time / 60).ToString("00");
         string seconds = (time % 60).ToString("00");
         suriveTime.text = $"{survivalString.GetLocalizedString()}" + minutes + " : " + seconds;
-        scoreString.TableEntryReference = "ScoreText";
-        scoreText.text = $"{scoreString.GetLocalizedString()}"+ (PlayerPrefs.GetInt("KillNum") * scoreX).ToString();
-        killNumString.TableEntryReference = "KillNumText";
-        killNumText.text = $"{killNumString.GetLocalizedString()}" + PlayerPrefs.GetInt("KillNum").ToString();
-        int score = PlayerPrefs.GetInt("Score");
-        score += PlayerPrefs.GetInt("KillNum") * scoreX;
-        PlayerPrefs.SetInt("Score",score);
-    }
 
+        int killNum = PlayerPrefs.GetInt("KillNum");
+        int runScore = killNum * scoreX;
+
+        // 显示本局得分。
+        scoreString.TableEntryReference = "ScoreText";
+        scoreText.text = $"{scoreString.GetLocalizedString()}" + runScore.ToString();
+
+        // 显示本局击杀数。
+        killNumString.TableEntryReference = "KillNumText";
+        killNumText.text = $"{killNumString.GetLocalizedString()}" + killNum.ToString();
+
+        // 把本局得分累加到玩家长期存档。
+        PlayerSaveStore.AddScore(runScore);
+    }
 }

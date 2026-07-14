@@ -8,7 +8,7 @@ public class MapGeneratorNetWork : NetworkBehaviour
 {
     public Tilemap tileMap;
     public TileBase tile;
-    private Transform player;
+    public Transform player;
     public int renderDistance;
 
     private Vector3 lastPlayerPos;
@@ -16,7 +16,7 @@ public class MapGeneratorNetWork : NetworkBehaviour
 
     public override void OnStartLocalPlayer()
     {
-        player = FindAnyObjectByType<PlayerNetWrok>().transform;
+        
         GenerateTiles();
         lastPlayerPos = tileMap.WorldToCell(player.position);
     }
@@ -25,6 +25,7 @@ public class MapGeneratorNetWork : NetworkBehaviour
     
     private void Update()
     {
+        player = FindAnyObjectByType<PlayerNetWrok>().transform;
         Vector3 currentPlayerCell = tileMap.WorldToCell(player.position);
         if (currentPlayerCell != lastPlayerPos)
         {

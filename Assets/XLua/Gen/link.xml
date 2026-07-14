@@ -1,0 +1,74 @@
+﻿
+
+<linker>
+
+	<assembly fullname="Assembly-CSharp">
+	    <type fullname="Tutorial.BaseClass" preserve="all"/>
+		<type fullname="Tutorial.TestEnum" preserve="all"/>
+		<type fullname="Tutorial.DerivedClass" preserve="all"/>
+		<type fullname="Tutorial.DerivedClass+TestEnumInner" preserve="all"/>
+		<type fullname="Tutorial.ICalc" preserve="all"/>
+		<type fullname="Tutorial.DerivedClassExtensions" preserve="all"/>
+		<type fullname="PlayerData" preserve="all"/>
+		<type fullname="Player" preserve="all"/>
+		<type fullname="PlayerStateType" preserve="all"/>
+		<type fullname="ExpController" preserve="all"/>
+		<type fullname="Weapon" preserve="all"/>
+		<type fullname="WeaponController" preserve="all"/>
+		<type fullname="HotfixWeaponController" preserve="all"/>
+		<type fullname="MissileController" preserve="all"/>
+		<type fullname="KnifeController" preserve="all"/>
+		<type fullname="ScytheController" preserve="all"/>
+		<type fullname="SwordController" preserve="all"/>
+		<type fullname="FunnelController" preserve="all"/>
+		<type fullname="TornadoController" preserve="all"/>
+		<type fullname="NewController" preserve="all"/>
+		<type fullname="SkillController" preserve="all"/>
+		<type fullname="Enemy" preserve="all"/>
+		<type fullname="EnemyStateType" preserve="all"/>
+		<type fullname="EnemySpawner" preserve="all"/>
+		<type fullname="PickUp" preserve="all"/>
+		<type fullname="PickUpTpye" preserve="all"/>
+		<type fullname="PickUpGenerator" preserve="all"/>
+		<type fullname="TaskController" preserve="all"/>
+		<type fullname="ObjPoolManager" preserve="all"/>
+		<type fullname="AudioController" preserve="all"/>
+		<type fullname="WeaponSelectController" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.CoreModule">
+	    <type fullname="UnityEngine.GameObject" preserve="all"/>
+		<type fullname="UnityEngine.Component" preserve="all"/>
+		<type fullname="UnityEngine.Transform" preserve="all"/>
+		<type fullname="UnityEngine.Vector2" preserve="all"/>
+		<type fullname="UnityEngine.Vector3" preserve="all"/>
+		<type fullname="UnityEngine.Quaternion" preserve="all"/>
+		<type fullname="UnityEngine.Mathf" preserve="all"/>
+		<type fullname="UnityEngine.Random" preserve="all"/>
+		<type fullname="UnityEngine.Time" preserve="all"/>
+		<type fullname="UnityEngine.Debug" preserve="all"/>
+		<type fullname="UnityEngine.LayerMask" preserve="all"/>
+		<type fullname="UnityEngine.SpriteRenderer" preserve="all"/>
+		<type fullname="UnityEngine.Events.UnityEvent" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.Physics2DModule">
+	    <type fullname="UnityEngine.Rigidbody2D" preserve="all"/>
+		<type fullname="UnityEngine.Collider2D" preserve="all"/>
+		<type fullname="UnityEngine.Physics2D" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.AnimationModule">
+	    <type fullname="UnityEngine.Animator" preserve="all"/>
+		
+	</assembly>
+
+	<assembly fullname="UnityEngine.UI">
+	    <type fullname="UnityEngine.UI.Image" preserve="all"/>
+		
+	</assembly>
+
+</linker>

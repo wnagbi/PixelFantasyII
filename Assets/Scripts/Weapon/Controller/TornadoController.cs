@@ -1,9 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Rendering;
 using UnityEngine;
 
-public class TornadoController : WeaponController
+// 龙卷风武器控制器。
+// 龙卷风移动、数量、范围和升级规则优先由 hotfix.weapon.tornado.lua 接管。
+public class TornadoController : HotfixWeaponController
 {
     public float moveRange;
     public List<GameObject> tornado;
@@ -16,23 +17,51 @@ public class TornadoController : WeaponController
     protected override void Start()
     {
         base.Start();
-        for (int i = 0; i < count; i++)
-        {
-            tornado.Add(Instantiate(prefab, transform.position + new Vector3(Random.Range(-moveRange, moveRange), Random.Range(-moveRange, moveRange), 0), Quaternion.identity));
-        }
     }
     protected override void Refresh()
     {
         tornado.Clear();
         for (int i = 0; i < count; i++) 
         {
-            tornado.Add(Instantiate(prefab, transform.position + new Vector3(Random.Range(-moveRange, moveRange), Random.Range(-moveRange, moveRange), 0), Quaternion.identity));
+            GameObject tornadoObj = InstantiateRuntimePrefab(transform.position + new Vector3(Random.Range(-moveRange, moveRange), Random.Range(-moveRange, moveRange), 0), Quaternion.identity);
+            if (tornadoObj != null)
+            {
+                tornado.Add(tornadoObj);
+            }
         }
         
     }
+
+    public void RebuildTornadoes()
+    {
+        // 暴露给 Lua：升级或配置变化后销毁旧龙卷风并重新生成。
+        for (int i = 0; i < tornado.Count; i++)
+        {
+            if (tornado[i] != null)
+            {
+                Destroy(tornado[i]);
+            }
+        }
+
+        Refresh();
+    }
+
+    protected override void OnHotfixStartReady()
+    {
+        RebuildTornadoes();
+    }
+
     protected override void Update()
     {
+        if (!IsHotfixStartReady)
+        {
+            return;
+        }
+
         weapon.weaponLevel = level;
+
+        // 这个武器的每帧移动逻辑主要交给 Lua 的 OnUpdate(host, deltaTime)。
+        TryLuaUpdate(Time.deltaTime);
         //if (!isAttack)
         //    Attack();
         //else 
@@ -48,6 +77,12 @@ public class TornadoController : WeaponController
     }
     protected override void Attack()
     {
+        // 龙卷风攻击行为优先由 Lua 控制。
+        if (TryLuaAttack())
+        {
+            return;
+        }
+
         //startTime = Time.time;
         //base.Attack();
         //float newX = transform.position.x+Random.Range(-moveRange, moveRange);
@@ -60,6 +95,12 @@ public class TornadoController : WeaponController
     }
     public void levelUp()
     {
+        // 升级优先交给 Lua，Lua 失败时使用 C# 默认升级表。
+        if (TryLuaLevelUp())
+        {
+            return;
+        }
+
         switch (level)
         {
             case 0:
@@ -94,5 +135,11 @@ public class TornadoController : WeaponController
             Destroy(tornado[i]);
         }
         Refresh();
+    }
+
+    protected override string GetDefaultLuaModuleName()
+    {
+        // 默认 Lua 模块路径。
+        return "hotfix.weapon.tornado";
     }
 }

@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -10,6 +10,8 @@ public enum WeaponType
     {
         knife, scythe,missile,sword,funnel,tornado
     }
+// 单张武器选择卡。
+// 负责显示当前武器等级/描述，并在玩家选择后调用 WeaponList 激活或升级对应武器。
 public class WeaponSelect : MonoBehaviour
 {
     public int id;
@@ -24,15 +26,18 @@ public class WeaponSelect : MonoBehaviour
     public LocalizedString nameString;
     private void Start()
     {
+        // 根据 id 找到玩家身上的 WeaponList 和对应 Weapon 数据。
         weaponList = FindObjectOfType<WeaponList>();
         weapon = weaponList.weaponList[id-1].GetComponent<Weapon>();
     }
     private void Update()
     {
+        // 持续刷新描述，确保升级后等级文本立即同步。
         DescribleGenerator();
     }
     public void DescribleGenerator() //Updata Describle of Selection Weapoin
     {
+        // 根据武器类型和等级拼 Localization key，例如 knifeLevel2。
         int level = weapon.weaponLevel;
         nameString.TableEntryReference = $"{weaponType}";
         nameBox.text = $"Lv.{level} {nameString.GetLocalizedString()}";
@@ -42,11 +47,13 @@ public class WeaponSelect : MonoBehaviour
     }
     public void ChangeGet() //Change Weapon whether get
     {
+        // 标记该武器已经获得。
         weapon.isGet = true;
     }
 
     public void LevelUp() //Judge which weapon want to select to level up
     {
+        // 根据选择卡上的 weaponType，把选择映射到 WeaponList 中的武器索引。
         switch (weaponType) 
         {
             case WeaponType.knife:

@@ -6,10 +6,12 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
+// 战斗内技能释放控制器。
+// C# 保留输入入口、UI 冷却、DOTween 和特效实例化；技能规则优先交给 Lua。
 public class SkillController : MonoBehaviour
 {
     public static SkillController Instance;
-    [Header("����")]
+    [Header("Magnet")]
     public float magenetCD;
     public GameObject magnet;
     public Image magnetImage;
@@ -19,7 +21,7 @@ public class SkillController : MonoBehaviour
     public Sprite magnetControUi;
     public Image magnetImageButton;
 
-    [Header("��ŭ")]
+    [Header("Rage")]
     public float rageCD;
     public float rageDutation;
     public GameObject rage;
@@ -29,7 +31,7 @@ public class SkillController : MonoBehaviour
     public Sprite rageControUi;
     public Image rageImageButton;
 
-    [Header("��Ԫն")]
+    [Header("Dimension Slash")]
     public float dsCD;
     public Transform position;
     public GameObject ds;
@@ -42,19 +44,24 @@ public class SkillController : MonoBehaviour
     public Image dsImageButton;
 
     private float currentTime;
+    private string dimensionSlashEffectKey;
+
+    // 技能 Lua 规则入口。OnSkill(host, skillId) 返回 true 表示 Lua 已经处理本次释放。
+    private const string SkillLuaModule = "hotfix.skill.skill_module";
+    private const string SkillConfigModule = "config.skill_config";
+
     private void OnEnable()
     {
-        //Debug.Log("1: " + PlayerPrefs.GetInt("Skill1") + " 2: " + PlayerPrefs.GetInt("Skill2") + " 3: "+ PlayerPrefs.GetInt("Skill3"));
-        if (PlayerPrefs.GetInt("Skill2") == 1)
+        if (PlayerSaveStore.IsSkillUnlocked(2))
             rage.SetActive(true);
         else
             rage.SetActive(false);
-        if (PlayerPrefs.GetInt("Skill1") == 1)
+        if (PlayerSaveStore.IsSkillUnlocked(1))
             magnet.SetActive(true);
         else
             magnet.SetActive(false);
 
-        if (PlayerPrefs.GetInt("Skill3") == 1)
+        if (PlayerSaveStore.IsSkillUnlocked(3))
             ds.SetActive(true);
         else
             ds.SetActive(false);
@@ -62,6 +69,7 @@ public class SkillController : MonoBehaviour
     private void Start()
     {
         Instance = this;
+        StartCoroutine(LoadAddressableSkillAssets());
     }
     private void Update()
     {
@@ -69,20 +77,33 @@ public class SkillController : MonoBehaviour
     }
     public void OnSkill1()
     {
-        if (PlayerPrefs.GetInt("Skill1") == 1 && !isMagnetCD && Time.timeScale == 1)
+        // 磁铁技能优先交给 Lua 判断解锁、CD、释放条件和实际效果。
+        // Lua 不处理时，继续走下面的 C# 默认逻辑。
+        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, 1, out bool handled1) && handled1)
+        {
+            return;
+        }
+
+        if (PlayerSaveStore.IsSkillUnlocked(1) && !isMagnetCD && Time.timeScale == 1)
         {
             pickUpAll.Invoke();
-            Debug.Log("��������1");
+            Debug.Log("Use skill 1");
             isMagnetCD = true;
             MagnetCD(magenetCD);
         }
     }
     public void OnSkill2() 
     {
-        if (PlayerPrefs.GetInt("Skill2") == 1 && !isRageCD && Time.timeScale == 1)
+        // 狂怒技能优先交给 Lua。Lua 可以热更额外伤害、持续时间和 CD。
+        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, 2, out bool handled2) && handled2)
+        {
+            return;
+        }
+
+        if (PlayerSaveStore.IsSkillUnlocked(2) && !isRageCD && Time.timeScale == 1)
         {
             PlayerData.getInstance().ExtraDamge = 20;
-            Debug.Log("��������2 " + PlayerData.getInstance().ExtraDamge);
+            Debug.Log("Use skill 2 " + PlayerData.getInstance().ExtraDamge);
             ImproveAttackDuration(rageDutation);
             isRageCD = true;
             
@@ -90,18 +111,73 @@ public class SkillController : MonoBehaviour
     }
     public void OnSkill3() 
     {
-        if (PlayerPrefs.GetInt("Skill3") == 1 && !isDSCD && Time.timeScale == 1)
+        // 次元斩技能优先交给 Lua。C# 仍保留 UI、特效实例化和冷却表现。
+        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, 3, out bool handled3) && handled3)
+        {
+            return;
+        }
+
+        if (PlayerSaveStore.IsSkillUnlocked(3) && !isDSCD && Time.timeScale == 1)
         {
 
-            Debug.Log("��������3 ");
+            Debug.Log("Use skill 3");
             uiFilter.SetActive(true);
-            Instantiate(particle,position.position,Quaternion.identity);
+            SpawnDimensionSlashEffect();
             DSCD(dsCD);
             isDSCD = true;
 
         }
     }
 
+    public bool CanUseSkill(int skillId)
+    {
+        // 暴露给 Lua 的查询方法：Lua 释放技能前可以复用 C# 的暂停、解锁、CD 判断。
+        if (Time.timeScale != 1)
+        {
+            return false;
+        }
+
+        switch (skillId)
+        {
+            case 1:
+                return PlayerSaveStore.IsSkillUnlocked(1) && !isMagnetCD;
+            case 2:
+                return PlayerSaveStore.IsSkillUnlocked(2) && !isRageCD;
+            case 3:
+                return PlayerSaveStore.IsSkillUnlocked(3) && !isDSCD;
+            default:
+                return false;
+        }
+    }
+
+    public void TriggerMagnet(float cooldown)
+    {
+        // 暴露给 Lua 的执行方法：Lua 决定释放后，让 C# 负责 UnityEvent 和 UI 冷却。
+        pickUpAll.Invoke();
+        Debug.Log("Use skill 1");
+        isMagnetCD = true;
+        MagnetCD(cooldown);
+    }
+
+    public void TriggerRage(float extraDamage, float duration, float cooldown)
+    {
+        // 暴露给 Lua：Lua 传入热更后的伤害、持续时间和 CD，C# 负责应用数值和 DOTween。
+        PlayerData.getInstance().ExtraDamge = Mathf.RoundToInt(extraDamage);
+        Debug.Log("Use skill 2 " + PlayerData.getInstance().ExtraDamge);
+        rageCD = cooldown;
+        ImproveAttackDuration(duration);
+        isRageCD = true;
+    }
+
+    public void TriggerDimensionSlash(float cooldown)
+    {
+        // 暴露给 Lua：Lua 决定能否释放，C# 负责开 UI、生成特效、启动冷却。
+        Debug.Log("Use skill 3");
+        uiFilter.SetActive(true);
+        SpawnDimensionSlashEffect();
+        DSCD(cooldown);
+        isDSCD = true;
+    }
     public void RestoreFilter()
     {
         uiFilter.SetActive(false);
@@ -120,7 +196,7 @@ public class SkillController : MonoBehaviour
         .OnComplete(() => 
             {
                 PlayerData.getInstance().ExtraDamge =0 ;
-                Debug.Log("�������ӳɽ��� "+ PlayerData.getInstance().ExtraDamge);
+                Debug.Log("Attack buff ended " + PlayerData.getInstance().ExtraDamge);
                 RageCD(rageCD);
                 
             });
@@ -142,7 +218,7 @@ public class SkillController : MonoBehaviour
         {
             if (rageImage.fillAmount == 0)
                 isRageCD = false;
-            Debug.Log("��ȴ���");
+            Debug.Log("Cooldown finished");
         });
     }
     public void DSCD(float duration)
@@ -162,7 +238,7 @@ public class SkillController : MonoBehaviour
         {
             if (dsImage.fillAmount == 0)
                 isDSCD = false;
-            Debug.Log("��ȴ���");
+            Debug.Log("Cooldown finished");
         });
     }
     public void UIChange() 
@@ -202,8 +278,101 @@ public class SkillController : MonoBehaviour
             {
                 if (magnetImage.fillAmount == 0)
                     isMagnetCD = false;
-                Debug.Log("��ȴ���");
+            Debug.Log("Cooldown finished");
             });
+    }
+
+    private IEnumerator LoadAddressableSkillAssets()
+    {
+        yield return LoadSkillIcon(1, magnetImage);
+        yield return LoadSkillIcon(1, magnet != null ? magnet.GetComponent<Image>() : null);
+        yield return LoadSkillIcon(2, rageImage);
+        yield return LoadSkillIcon(2, rage != null ? rage.GetComponent<Image>() : null);
+        yield return LoadSkillIcon(3, dsImage);
+        yield return LoadSkillIcon(3, ds != null ? ds.GetComponent<Image>() : null);
+
+        dimensionSlashEffectKey = GetSkillResourceKey(3, "effectKey", string.Empty);
+    }
+
+    private IEnumerator LoadSkillIcon(int skillId, Image targetImage)
+    {
+        if (targetImage == null)
+        {
+            yield break;
+        }
+
+        string iconKey = GetSkillResourceKey(skillId, "iconKey", string.Empty);
+        if (string.IsNullOrWhiteSpace(iconKey))
+        {
+            yield break;
+        }
+
+        yield return AddressableResourceManager.LoadAsset<Sprite>(
+            iconKey,
+            sprite =>
+            {
+                targetImage.sprite = sprite;
+                Debug.Log($"[SkillController] Applied Addressable icon for skill {skillId}: {iconKey} -> {targetImage.gameObject.name}");
+            },
+            () => Debug.LogWarning($"[SkillController] Use Inspector fallback icon for skill {skillId}.")
+        );
+    }
+
+    private string GetSkillResourceKey(int skillId, string keyName, string fallback)
+    {
+        if (!LuaConfig.TryGetTable(SkillConfigModule, "skills", out XLua.LuaTable skills))
+        {
+            return fallback;
+        }
+
+        XLua.LuaTable skill = null;
+        try
+        {
+            skill = skills.Get<int, XLua.LuaTable>(skillId);
+            if (skill == null)
+            {
+                return fallback;
+            }
+
+            string value = skill.Get<string>(keyName);
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+        catch
+        {
+            return fallback;
+        }
+        finally
+        {
+            skill?.Dispose();
+            skills.Dispose();
+        }
+    }
+
+    private void SpawnDimensionSlashEffect()
+    {
+        Vector3 spawnPosition = position != null ? position.position : transform.position;
+
+        if (string.IsNullOrWhiteSpace(dimensionSlashEffectKey))
+        {
+            InstantiateFallbackDimensionSlash(spawnPosition);
+            return;
+        }
+
+        StartCoroutine(AddressableResourceManager.InstantiateAsync(
+            dimensionSlashEffectKey,
+            spawnPosition,
+            Quaternion.identity,
+            null,
+            () => InstantiateFallbackDimensionSlash(spawnPosition)
+        ));
+    }
+
+    private void InstantiateFallbackDimensionSlash(Vector3 spawnPosition)
+    {
+        if (particle != null)
+        {
+            Instantiate(particle, spawnPosition, Quaternion.identity);
+        }
     }
 
 

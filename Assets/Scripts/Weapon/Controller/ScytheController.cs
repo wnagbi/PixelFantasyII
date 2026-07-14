@@ -4,7 +4,9 @@ using System.Threading;
 using UnityEngine;
 using static Cinemachine.DocumentationSortingAttribute;
 
-public class ScytheController : WeaponController
+// 镰刀武器控制器。
+// 发射数量、CD、伤害和升级规则优先由 hotfix.weapon.scythe.lua 接管。
+public class ScytheController : HotfixWeaponController
 {
     public GameObject shootPoint;
 
@@ -15,11 +17,23 @@ public class ScytheController : WeaponController
 
     protected override void Attack()
     {
+        // Lua 攻击成功时直接返回；否则使用原 C# 环形发射逻辑。
+        if (TryLuaAttack())
+        {
+            return;
+        }
+
         base.Attack();
         for (int i = 0; i < count; i++)
         {
             Vector3 dir = Vector3.forward * 360 * i / count;
-            Transform scythe = Instantiate(prefab, shootPoint.transform.position, Quaternion.identity, shootPoint.transform).transform;
+            GameObject scytheObj = InstantiateRuntimePrefab(shootPoint.transform.position, Quaternion.identity, shootPoint.transform);
+            if (scytheObj == null)
+            {
+                continue;
+            }
+
+            Transform scythe = scytheObj.transform;
             scythe.Rotate(dir);
         }
     }
@@ -30,6 +44,12 @@ public class ScytheController : WeaponController
 
     public void levelUp()
     {
+        // 升级优先走 Lua，失败时保留 C# 默认升级表。
+        if (TryLuaLevelUp())
+        {
+            return;
+        }
+
         switch (level) 
         {
             case 0:
@@ -61,6 +81,12 @@ public class ScytheController : WeaponController
         
         
 
+    }
+
+    protected override string GetDefaultLuaModuleName()
+    {
+        // 默认 Lua 模块路径。
+        return "hotfix.weapon.scythe";
     }
 
 }

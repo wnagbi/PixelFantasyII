@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+// 标题界面开始游戏控制器。
+// Map 脚本会把选中的地图名写到 startGameTarget，开始按钮调用 Tp() 进入该场景。
 public class StartGameController : MonoBehaviour
 {
     public static StartGameController instance;
@@ -10,10 +12,12 @@ public class StartGameController : MonoBehaviour
 
     private void Awake()
     {
+        // 地图选择按钮通过 instance 写入目标场景名。
         instance = this;
     }
     public void Tp() 
     {
+        // 没选地图时不切场景。
         if (startGameTarget == null) return;
         SceneManager.LoadScene(startGameTarget);
     }

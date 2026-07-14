@@ -15,9 +15,9 @@ MonoBehaviour:
   m_DefaultGroup: 4ece6594566d3984cbf09e09f069a508
   m_currentHash:
     serializedVersion: 2
-    Hash: 00000000000000000000000000000000
+    Hash: e70193dbfcc37d80b02b456a46083263
   m_OptimizeCatalogSize: 0
-  m_BuildRemoteCatalog: 0
+  m_BuildRemoteCatalog: 1
   m_BundleLocalCatalog: 0
   m_CatalogRequestsTimeout: 0
   m_DisableCatalogUpdateOnStart: 0
@@ -35,9 +35,9 @@ MonoBehaviour:
   m_CheckForContentUpdateRestrictionsOption: 0
   m_MonoScriptBundleCustomNaming: 
   m_RemoteCatalogBuildPath:
-    m_Id: 
+    m_Id: 6ad738e653db818479ead4b79a5e4616
   m_RemoteCatalogLoadPath:
-    m_Id: 
+    m_Id: 7aea1e7cc128b184fbb69f8819ae7679
   m_ContentStateBuildPathProfileVariableName: 
   m_CustomContentStateBuildPath: 
   m_ContentStateBuildPath: 
@@ -48,6 +48,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f2ea9767f7874784aae1048f30ecc6ec, type: 2}
   - {fileID: 11400000, guid: ccc29005152fc6b4fbba3d09754babce, type: 2}
   - {fileID: 11400000, guid: 4e726921b0015fb4f96dc20e4a760603, type: 2}
+  - {fileID: 11400000, guid: 1d976cceabd141e45a8fcab1936f20a0, type: 2}
   - {fileID: 11400000, guid: 6aecc1d2d0a633e4fb6cb62b6f25c74d, type: 2}
   - {fileID: 11400000, guid: 3aff72e1f6184e942b48829e2ea490ac, type: 2}
   m_BuildSettings:
@@ -62,9 +63,9 @@ MonoBehaviour:
       m_ProfileName: Default
       m_Values:
       - m_Id: 6ad738e653db818479ead4b79a5e4616
-        m_Value: ServerData/[BuildTarget]
+        m_Value: D:/AddressablesServerRoot/AddressablesRemote/[BuildTarget]
       - m_Id: 7aea1e7cc128b184fbb69f8819ae7679
-        m_Value: http://[PrivateIpAddress]:[HostingServicePort]
+        m_Value: http://127.0.0.1:18080/AddressablesRemote/[BuildTarget]
       - m_Id: 83a1821efadaa3447a5a4235e7e47583
         m_Value: '[UnityEngine.AddressableAssets.Addressables.BuildPath]/[BuildTarget]'
       - m_Id: a23ed1bc72026254088f6f3d259cd00a
@@ -95,6 +96,7 @@ MonoBehaviour:
     - Locale-zh-Hans
     - Locale-en
     - Preload
+    - gameplay
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
   - {fileID: 11400000, guid: c706560883ff6c345be9fd07a4479629, type: 2}

@@ -91,7 +91,6 @@ public class PlayerNetWrok : NetworkBehaviour
     public void OnMove(InputAction.CallbackContext ctx)
     {
         InputValue = ctx.ReadValue<Vector2>();
-        //Debug.Log("�ƶ����ݣ�" + InputValue);
     }
 
     #endregion
@@ -105,7 +104,6 @@ public class PlayerNetWrok : NetworkBehaviour
         ani.SetFloat("LookX",InputValue.x);
         ani.SetFloat("LookY",InputValue.y);
         rig.velocity = InputValue * PlayerData.getInstance().CurrentSpeed;
-        //Debug.Log("�ٶ�" + rig.velocity);
     }
     public void GetDamage(float damage) 
     {

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
@@ -49,6 +50,8 @@ public class PlayerData : SingleBaseManager<PlayerData>
     private float currentSpeed;   // currentSpeed = speed + speedBuff;  // the current speed of player
 
 
+
+
     [Header("Game Setting")]
     private int resolutionIndex;
     private int languageIndex;
@@ -57,6 +60,25 @@ public class PlayerData : SingleBaseManager<PlayerData>
     // HealthBuff, AttackBuff, DefenseBuff, SpeedBuff,
     // MaxHealth, CurrentHealth, CurrentAttack, CurrentDefense, CurrentSpeed,
     // X_pos, Y_pos
+
+    public event Action<float,float> OnHealthChanged;
+
+    private void SetHealth(float value)
+    {
+        CurrentHealth = value;
+        OnHealthChanged?.Invoke(currentHealth,CurrentMaxHealth);
+    }
+
+    public void AddHealth(float value)
+    {
+        SetHealth(CurrentHealth + value);
+    }
+
+    public void TakeDamage(float value)
+    {
+        SetHealth(currentHealth - value);
+    }
+    
     public int ExtraDamge 
     {
         get { return extraAttack; }
@@ -243,22 +265,19 @@ public class PlayerData : SingleBaseManager<PlayerData>
         set { y_pos = value; }
     }
 
-    public int Resolution 
-    {
-        get { return resolutionIndex;  }
-        set { resolutionIndex = value; }
-    }
-    public int Language 
-    {
-        get { return languageIndex;  }
-        set { languageIndex = value; }
-    }
+
 
     public void UpdateAllData()
     {
-        currentMaxHealth = baseMaxHealth + level * 10;  // the maximum curHealth of player
-        currentSpeed = baseSpeed + level * 1;   // the speed of player
-        currentDefense = baseDefense + level * 1;   // the basic defense of player
+        // 玩家升级成长参数从 Lua 配置读取。
+        // 这里仍然由 C# 计算并写回 PlayerData，Lua 只负责提供可热更的成长系数。
+        float healthGrowth = LuaConfig.GetFloat("config.player_config", "level_health_growth", 10f);
+        float speedGrowth = LuaConfig.GetFloat("config.player_config", "level_speed_growth", 1f);
+        float defenseGrowth = LuaConfig.GetFloat("config.player_config", "level_defense_growth", 1f);
+
+        currentMaxHealth = baseMaxHealth + level * healthGrowth;
+        currentSpeed = baseSpeed + level * speedGrowth;
+        currentDefense = baseDefense + level * defenseGrowth;
     }
 
     /// <summary>
@@ -275,7 +294,6 @@ public class PlayerData : SingleBaseManager<PlayerData>
         //PlayerPrefs.SetFloat("CurrentAttack", baseAttack);
         PlayerPrefs.SetFloat("CurrentDefense", baseDefense);
         PlayerPrefs.SetFloat("CurrentSpeed", baseSpeed);
-        PlayerPrefs.SetInt("Skill1", 0);
     }
 
     /// <summary>
@@ -297,11 +315,6 @@ public class PlayerData : SingleBaseManager<PlayerData>
     }
 
 
-    public void SaveGameSetting() 
-    {
-        PlayerPrefs.SetInt("Resolution", Resolution);
-        PlayerPrefs.SetInt("Language", Language);
-    }
     /// <summary>
     /// This function is used to load data of player.
     /// </summary>
@@ -319,11 +332,6 @@ public class PlayerData : SingleBaseManager<PlayerData>
         CurrentDefense = PlayerPrefs.GetFloat("CurrentDefense", currentDefense);
         CurrentSpeed = PlayerPrefs.GetFloat("CurrentSpeed", currentSpeed);
     }
-    public void LoadGameSetting() 
-    {
-        Resolution = PlayerPrefs.GetInt("Resolution");
-        Language = PlayerPrefs.GetInt("Language");
-    }
 
     public void SaveKillNum() 
     {
@@ -331,6 +339,13 @@ public class PlayerData : SingleBaseManager<PlayerData>
     }
     public void ChangeSkill(int ID) 
     {
-        PlayerPrefs.SetInt($"Skill{ID}", 1);
+        PlayerSaveStore.UnlockSkill(ID);
     }
+
+
+
+
+
+
+
 }
