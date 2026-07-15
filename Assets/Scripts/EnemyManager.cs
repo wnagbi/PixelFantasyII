@@ -14,6 +14,7 @@ public class EnemyManager : MonoBehaviour
     {
         get
         {
+            // 读取数量前先清理一次，避免统计到已经回收到对象池的敌人。
             CleanupInvalidEnemies();
             return aliveEnemies.Count;
         }
@@ -55,11 +56,13 @@ public class EnemyManager : MonoBehaviour
 
     public void Clear()
     {
+        // 场景切换、重新开始或调试时可以清空注册表。
         aliveEnemies.Clear();
     }
 
     public Enemy GetNearestEnemy(Vector3 origin)
     {
+        // 找离 origin 最近的有效敌人。武器寻最近目标时优先用这个接口。
         Enemy nearest = null;
         float nearestSqrDistance = float.MaxValue;
 
@@ -72,6 +75,7 @@ public class EnemyManager : MonoBehaviour
                 continue;
             }
 
+            // 使用 sqrMagnitude 避免 Vector3.Distance 的开方开销。
             float sqrDistance = (enemy.transform.position - origin).sqrMagnitude;
             if (sqrDistance < nearestSqrDistance)
             {
@@ -85,6 +89,7 @@ public class EnemyManager : MonoBehaviour
 
     public Enemy GetNearestEnemyInRange(Vector3 origin, float range)
     {
+        // 只在指定范围内寻找最近敌人，适合有攻击距离限制的武器。
         Enemy nearest = null;
         float nearestSqrDistance = Mathf.Max(0f, range) * Mathf.Max(0f, range);
 
@@ -110,6 +115,7 @@ public class EnemyManager : MonoBehaviour
 
     public Enemy GetRandomEnemy()
     {
+        // 随机寻敌前先清掉无效对象，避免随机到已死亡/已回收敌人。
         CleanupInvalidEnemies();
         if (aliveEnemies.Count == 0)
         {
@@ -121,19 +127,15 @@ public class EnemyManager : MonoBehaviour
 
     public IReadOnlyList<Enemy> GetAliveEnemies()
     {
+        // 返回只读接口，表达“外部可以遍历查看，但不要修改注册表”。
+        // 如果以后需要绝对防止外部强转修改，可以改为 return new List<Enemy>(aliveEnemies)。
         CleanupInvalidEnemies();
         return aliveEnemies;
     }
 
-    public List<Enemy> GetEnemiesList()
-    {
-        // 兼容旧代码。新代码优先使用 GetNearestEnemy/GetRandomEnemy 等寻敌接口。
-        CleanupInvalidEnemies();
-        return new List<Enemy>(aliveEnemies);
-    }
-
     private void CleanupInvalidEnemies()
     {
+        // 从后往前删，避免 RemoveAt 后影响还没遍历到的索引。
         for (int i = aliveEnemies.Count - 1; i >= 0; i--)
         {
             if (!IsValidEnemy(aliveEnemies[i]))
@@ -145,6 +147,8 @@ public class EnemyManager : MonoBehaviour
 
     private bool IsValidEnemy(Enemy enemy)
     {
+        // 对象池项目里“还在列表里”不代表“还能被锁定”。
+        // 这里统一过滤禁用、死亡、回收中或血量归零的敌人。
         return enemy != null
             && enemy.gameObject.activeInHierarchy
             && enemy.live

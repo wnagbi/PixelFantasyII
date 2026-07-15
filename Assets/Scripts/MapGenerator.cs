@@ -27,9 +27,6 @@ public class MapGenerator : MonoBehaviour
     }
     private void Update()
     {
-        // 如果单机 Player 不存在，兼容旧联网玩家对象。
-        if(player == null)
-            player = FindAnyObjectByType<PlayerNetWrok>().transform;
         Vector3 currentPlayerCell = tileMap.WorldToCell(player.position);
         if (currentPlayerCell != lastPlayerPos) // Check whether player movew
         {

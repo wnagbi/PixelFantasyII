@@ -33,6 +33,7 @@ public class Sword : MonoBehaviour
     private void Start()
     {
         // 生成时从 EnemyManager 当前存活敌人中随机选择一个目标。
+        // 如果场上暂时没有敌人，enemy 保持 null，SwordController 会在后续帧重新尝试分配。
         Enemy target = EnemyManager.Instance != null ? EnemyManager.Instance.GetRandomEnemy() : null;
         enemy = target != null ? target.transform : null;
         weapon = FindObjectOfType<SwordController>();

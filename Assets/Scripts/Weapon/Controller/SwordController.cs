@@ -57,6 +57,7 @@ public class SwordController : HotfixWeaponController
             Transform target = swordComponent.enemy;
             if (!IsValidTarget(target))
             {
+                // 目标死亡、回收或为空时重新分配，避免飞剑追对象池里的旧对象。
                 AssignTarget(swordTransform);
                 target = swordComponent.enemy;
             }
@@ -78,6 +79,7 @@ public class SwordController : HotfixWeaponController
             return;
         }
 
+        // 第一版飞剑使用随机寻敌；如果想改成追最近目标，只需要换成 GetNearestEnemy。
         Enemy target = EnemyManager.Instance != null ? EnemyManager.Instance.GetRandomEnemy() : null;
         Sword swordComponent = swordTransform.GetComponent<Sword>();
         if (swordComponent != null)
@@ -88,6 +90,7 @@ public class SwordController : HotfixWeaponController
 
     private bool IsValidTarget(Transform target)
     {
+        // 飞剑保存的是 Transform，所以这里再反查 Enemy 状态，防止锁定死亡/回收对象。
         if (target == null || !target.gameObject.activeInHierarchy)
         {
             return false;
@@ -125,6 +128,7 @@ public class SwordController : HotfixWeaponController
         }
 
         sword = swordObj.transform;
+        // 生成时立刻分配一次目标；没有敌人时保持 null，Update 中会继续尝试。
         AssignTarget(sword);
         swords.Add(sword);
     }

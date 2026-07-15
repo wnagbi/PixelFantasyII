@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using UnityEngine;
-using Mirror;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 

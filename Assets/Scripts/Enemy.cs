@@ -49,8 +49,7 @@ public class Enemy : MonoBehaviour
     {
         if(FindAnyObjectByType<Player>()!=null)
             target = FindAnyObjectByType<Player>().transform;
-        else
-            target = FindAnyObjectByType<PlayerNetWrok>().transform;
+        
         maxHealht = Health;
         
         ani = GetComponent<Animator>(); 

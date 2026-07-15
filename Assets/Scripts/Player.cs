@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.InputSystem;
 using UnityEngine.Events;
-using Mirror;
 
 /// <summary>
 /// Enum for player state

@@ -169,12 +169,14 @@ public class HotfixWeaponController : WeaponController
 
     public Transform GetNearestEnemyTransform()
     {
+        // Lua 侧更常用 Transform，返回 null 时 Lua 需要自行跳过本次攻击。
         Enemy enemy = GetNearestEnemy();
         return enemy != null ? enemy.transform : null;
     }
 
     public Transform GetRandomEnemyTransform()
     {
+        // 给 Lua 武器脚本提供随机目标 Transform，筛选逻辑仍统一在 EnemyManager。
         Enemy enemy = GetRandomEnemy();
         return enemy != null ? enemy.transform : null;
     }
