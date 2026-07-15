@@ -4,7 +4,7 @@
 
 `Pixel Fantasy II` 是一款基于 Unity 开发的 2D 像素风动作生存类项目。玩家在关卡中通过移动、攻击、击杀敌人、获取经验、升级武器和释放技能来推进战斗流程。
 
-本项目当前主要作为学习与求职展示 Demo，重点展示单机核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地数据存储以及启动热更新加载流程。
+本项目当前主要作为学习与求职展示 Demo，重点展示单机核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地数据存储、事件驱动 UI 刷新、对象池寻敌优化以及启动热更新加载流程。
 
 ## 项目特色
 
@@ -14,6 +14,8 @@
 - 敌人刷怪、追踪、受伤、死亡与掉落流程。
 - 分数、技能解锁、设置项等本地 JSON 存储。
 - 启动场景加载条展示脚本更新、资源检查和资源下载进度。
+- HUD、任务、分数、技能解锁等核心 UI 使用事件驱动刷新，减少运行时轮询。
+- EnemyManager 统一维护有效敌人列表，武器寻敌不直接扫描场景对象。
 
 ## 技术亮点
 
@@ -34,6 +36,15 @@
 
 - **JSON 本地数据存储**  
   使用 `Newtonsoft.Json` 保存游戏设置、分数和技能解锁状态，替代部分旧 PlayerPrefs 数据。
+
+- **事件驱动 UI 与运行时数据解耦**  
+  使用 `GameEvents` 广播血量、经验、击杀数、分数和技能解锁变化，使用 `RunData` 管理本局击杀数和生存时间，避免 UI 每帧读取 `PlayerPrefs`。
+
+- **EnemyManager 统一寻敌服务**  
+  敌人从对象池启用时注册、回收时注销，武器通过 `GetNearestEnemy`、`GetRandomEnemy` 等接口获取有效目标，避免锁定死亡或已回收敌人。
+
+- **输入设备状态管理**  
+  `InputController` 记录上一次有效输入设备，技能按钮图标可在进入场景时立即显示键鼠或手柄提示，并在设备切换时自动刷新。
 
 - **对象池与 Addressables Prefab 替换**  
   对敌人、掉落物等高频对象保留对象池生成流程，同时支持通过 Addressables 替换池内 Prefab。
@@ -64,6 +75,8 @@ C#             Unity 生命周期、资源加载、对象池、UI、物理、动
 Lua            玩法规则、数值成长、武器逻辑、敌人规则、掉落规则
 Addressables   Prefab、Sprite、VFX、资源引用
 JSON           本地设置、分数、技能解锁状态
+GameEvents     血量、经验、击杀数、任务、技能解锁等 UI 通知
+RunData        当前局击杀数、生存时间等运行时数据
 ```
 
 ## 项目结构
@@ -74,6 +87,9 @@ Assets/
   Scripts/
     Hotfix/                    xLua 热更新基础设施与 C# Host
     Controller/                游戏流程、UI、设置、存档、启动加载
+    GameEvents.cs              事件中心
+    RunData.cs                 当前局运行时数据
+    EnemyManager.cs            敌人注册表与统一寻敌服务
     ObjPool/                   对象池
     Weapon/                    武器表现与控制器
     PickUp/                    掉落物逻辑
@@ -156,7 +172,7 @@ http://127.0.0.1:18080/LuaRemote/lua_manifest.json
 ## 备注
 
 - 本项目当前重点为单机核心玩法与热更新系统展示。
-- 项目中保留的 Mirror / 联机相关内容不是当前主线展示内容。
+- Mirror / 联机相关代码已从当前主线中移除，项目展示重点为单机核心玩法。
 - 本地 HTTP 服务器用于模拟商业化热更新流程，不代表已经接入正式线上服务器或 CDN。
 - Addressables 可以热更新资源和 Prefab 序列化数据，但不能热更新客户端不存在的 C# 代码。
 - C# 函数逻辑如需热更新，需要提前设计为 C# Host 调 Lua Rule 的形式。
