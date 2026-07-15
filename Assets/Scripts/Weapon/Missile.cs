@@ -1,80 +1,97 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-// 导弹落点/导弹动画实体。
-// 负责按 MissileController 的 timer 调整动画速度，Fire 后开启碰撞并造成伤害。
+// 导弹落点/导弹实体。动画表现留在本脚本，伤害结算交给 DamageSystem。
 public class Missile : MonoBehaviour
 {
     public AnimationClip targetAnimation;
     public AnimationClip missileAnimation;
     public GameObject missile;
 
-
     private Animator missileAni;
     private Animator ani;
-    private float originSpeed;
     private CapsuleCollider2D col;
     private MissileController weapon;
-    private SpriteRenderer sr;
-    private Color originColor;
-    private Color targetColor;
-    private float startTime;
-    
+
     private void Start()
     {
-        // 缓存动画、碰撞、渲染等组件。
         ani = GetComponent<Animator>();
-        missileAni = missile.GetComponent<Animator>();
-        originSpeed = ani.speed;
+        missileAni = missile != null ? missile.GetComponent<Animator>() : null;
         col = GetComponent<CapsuleCollider2D>();
-        sr = GetComponent<SpriteRenderer>();
-        originColor = sr.color;
-        targetColor = Color.red;
-        weapon = FindObjectOfType<MissileController>();
-        startTime = Time.time;
 
-
-        // 根据武器 timer 调整目标圈和导弹动画播放速度，让动画时长和爆炸时间一致。
-        float animationLength = targetAnimation.length;
-        ani.speed = animationLength/weapon.timer;
-        float missileAnimationLength = missileAnimation.length;
-        missileAni.speed = missileAnimationLength / weapon.timer;
-        
-    }
-    private void Update()
-    {
-        //Aiming();
-
-    }
-
-
-    public void SetAnimationDuration(float newDuration) 
-    {
-        // 暴露给动画事件或外部逻辑：动态调整落点动画时长。
-        float animationLength = targetAnimation.length;
-        ani.speed = animationLength / newDuration;
-    }
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.CompareTag("Enemy"))
+        if (weapon == null)
         {
-            // 导弹碰到敌人时造成当前导弹伤害。
-            collision.GetComponent<Enemy>().GetDamage(weapon.damage + PlayerData.getInstance().ExtraDamge);
-            DamageNumberController.instance.SpawnDamage(weapon.damage + PlayerData.getInstance().ExtraDamge, collision.transform.position);
+            Debug.LogWarning("[Missile] Owner controller is missing. Call Init before the missile starts.", this);
+            return;
+        }
+
+        if (ani != null && targetAnimation != null && weapon.timer > 0f)
+        {
+            ani.speed = targetAnimation.length / weapon.timer;
+        }
+
+        if (missileAni != null && missileAnimation != null && weapon.timer > 0f)
+        {
+            missileAni.speed = missileAnimation.length / weapon.timer;
         }
     }
-    public void Fire() 
-    {
-        // 动画事件调用：真正落下时开启碰撞，并短暂延迟后销毁。
-        col.enabled = true;
-        Invoke("MissileDestroy", 0.1f);
 
+    public void Init(MissileController owner)
+    {
+        weapon = owner;
     }
 
-    private void MissileDestroy() 
+    public void SetAnimationDuration(float newDuration)
     {
-        // 当前导弹不是对象池对象，直接销毁。
+        if (ani == null || targetAnimation == null || newDuration <= 0f)
+        {
+            return;
+        }
+
+        ani.speed = targetAnimation.length / newDuration;
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (!collision.CompareTag("Enemy"))
+        {
+            return;
+        }
+
+        if (weapon == null)
+        {
+            Debug.LogWarning("[Missile] Owner controller is missing. Damage skipped.", this);
+            return;
+        }
+
+        if (!collision.TryGetComponent(out Enemy enemy))
+        {
+            return;
+        }
+
+        // 导弹伤害统一走 DamageSystem，Lua 伤害修正和伤害数字也会在那里处理。
+        DamageSystem.ApplyToEnemy(
+            DamageSystem.CreateWeaponDamage(
+                weapon.gameObject,
+                enemy,
+                collision.transform.position,
+                weapon.damage,
+                PlayerData.getInstance().ExtraDamge
+            )
+        );
+    }
+
+    public void Fire()
+    {
+        if (col != null)
+        {
+            col.enabled = true;
+        }
+
+        Invoke(nameof(MissileDestroy), 0.1f);
+    }
+
+    private void MissileDestroy()
+    {
         Destroy(gameObject);
     }
 }

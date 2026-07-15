@@ -46,6 +46,12 @@
 - **输入设备状态管理**  
   `InputController` 记录上一次有效输入设备，技能按钮图标可在进入场景时立即显示键鼠或手柄提示，并在设备切换时自动刷新。
 
+- **对象池优化**  
+  敌人、掉落物等高频生成对象通过对象池复用，减少频繁 Instantiate / Destroy 带来的性能开销，并与 EnemyManager 注册表、掉落逻辑和 Addressables Prefab 替换流程配合使用。
+
+- **DOTween UI 动画表现**  
+  使用 DOTween 实现血条平滑变化和伤害数字弹出动画，让受伤反馈更直观，同时减少手写协程和插值逻辑。
+
 - **对象池与 Addressables Prefab 替换**  
   对敌人、掉落物等高频对象保留对象池生成流程，同时支持通过 Addressables 替换池内 Prefab。
 
@@ -172,7 +178,6 @@ http://127.0.0.1:18080/LuaRemote/lua_manifest.json
 ## 备注
 
 - 本项目当前重点为单机核心玩法与热更新系统展示。
-- Mirror / 联机相关代码已从当前主线中移除，项目展示重点为单机核心玩法。
 - 本地 HTTP 服务器用于模拟商业化热更新流程，不代表已经接入正式线上服务器或 CDN。
 - Addressables 可以热更新资源和 Prefab 序列化数据，但不能热更新客户端不存在的 C# 代码。
 - C# 函数逻辑如需热更新，需要提前设计为 C# Host 调 Lua Rule 的形式。

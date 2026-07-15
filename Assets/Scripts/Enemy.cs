@@ -1,21 +1,19 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Rendering;
-// 敌人状态类型。Enemy 会用这个枚举从状态字典里取出当前状态。
-public enum EnemyStateType 
+
+public enum EnemyStateType
 {
-    Idle,Move,Attack,Hurt,Die
+    Idle,
+    Move,
+    Attack,
+    Hurt,
+    Die
 }
-// 敌人主体控制器。
-// 保存敌人数值、组件引用、状态机、受伤/死亡流程，并接入 Lua 热更状态机。
+
+// Main enemy runtime controller. Keeps stats, state machine, damage and pool lifecycle.
 public class Enemy : MonoBehaviour
 {
-    // 敌人状态机热更开关。
-    // true 时 Move/Hurt/Die/Attack 等状态会走 hotfix.enemy.enemy_state.lua；
-    // false 时使用下面 UseDefaultStates() 里注册的 C# 状态。
     public bool useLuaStateMachine = true;
     public float enemySpeed;
     public float colliderDamage;
@@ -24,16 +22,15 @@ public class Enemy : MonoBehaviour
     public float Health;
     public float maxHealht;
 
-
     public AudioClip vfDie;
     public UnityEvent OnHurt;
     public UnityEvent OnDie;
 
-
-
     public bool isHurt;
     public bool isDie;
-    [HideInInspector]public Animator ani;
+    [HideInInspector] public Animator ani;
+    public bool live;
+
     private PickUpGenerator pickUpGenerator;
     private Rigidbody2D rig;
     private SpriteRenderer sr;
@@ -41,25 +38,19 @@ public class Enemy : MonoBehaviour
     private Color originColor;
     private IState currentState;
     private float originSpeed;
-    public bool live;
-    Dictionary<EnemyStateType,IState> states = new Dictionary<EnemyStateType,IState>();
-
+    private readonly Dictionary<EnemyStateType, IState> states = new Dictionary<EnemyStateType, IState>();
 
     private void Awake()
     {
-        if(FindAnyObjectByType<Player>()!=null)
-            target = FindAnyObjectByType<Player>().transform;
-        
         maxHealht = Health;
-        
-        ani = GetComponent<Animator>(); 
+
+        ani = GetComponent<Animator>();
         rig = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
         pickUpGenerator = GetComponent<PickUpGenerator>();
         originColor = sr.color;
         originSpeed = enemySpeed;
 
-        // 初始化状态表：优先使用 Lua 状态机，方便热更敌人追踪、受伤、死亡等规则。
         if (useLuaStateMachine)
         {
             UseLuaStates();
@@ -68,8 +59,10 @@ public class Enemy : MonoBehaviour
         {
             UseDefaultStates();
         }
+
         TransitionState(EnemyStateType.Move);
     }
+
     private void OnEnable()
     {
         live = true;
@@ -79,37 +72,23 @@ public class Enemy : MonoBehaviour
         isHurt = false;
         sr.color = originColor;
         TransitionState(EnemyStateType.Move);
+
         if (EnemyManager.Instance != null)
         {
             EnemyManager.Instance.AddEnemy(this);
         }
-        //Debug.Log("生命" + Health + "是否死亡"+isDie+"是否受伤" +isHurt);
-
     }
-    public void TransitionState(EnemyStateType type) 
-    {
-        if (!states.ContainsKey(type))
-        {
-            UseDefaultStates();
-        }
 
-        if (currentState != null)
-        {
-            currentState.OnExit();
-        }
-        currentState = states[type];
-        currentState.OnEnter();
-    }
     private void Update()
     {
-
         currentState.OnUpData();
     }
+
     private void FixedUpdate()
     {
-        //ColliderAttack();
         currentState.OnFixUpData();
     }
+
     private void OnDisable()
     {
         if (EnemyManager.Instance != null)
@@ -117,62 +96,102 @@ public class Enemy : MonoBehaviour
             EnemyManager.Instance.RemoveEnemy(this);
         }
     }
+
+    public void TransitionState(EnemyStateType type)
+    {
+        if (!states.ContainsKey(type))
+        {
+            UseDefaultStates();
+        }
+
+        currentState?.OnExit();
+        currentState = states[type];
+        currentState.OnEnter();
+    }
+
     public void ChasePlayer()
     {
-        Vector2 dir = (target.position - transform.position).normalized;
-        //Debug.Log("方向"+ dir);
-        if (dir.x > 0)
-            sr.flipX = true;
-        else
-            sr.flipX = false;
-        rig.velocity = dir * enemySpeed;
-        //Debug.Log("敌人速度" + rig.velocity);
-    }
-
-    public void GetDamage(float damage) 
-    {
-        // 伤害先交给 Lua 修正，例如根据敌人类型、关卡时间、Buff 改变最终扣血。
-        // Lua 不存在或报错时，damage 保持 C# 传入的默认值。
-        if (LuaConfig.TryCallFloat("hotfix.enemy.enemy_state", "AdjustDamage", this, damage, out float luaDamage))
+        if (target == null && !PlayerRuntimeRegistry.TryGetPlayerTransform(out target))
         {
-            damage = luaDamage;
+            rig.velocity = Vector2.zero;
+            return;
         }
 
-        Health -= damage;
-        OnHurt?.Invoke();
-        if (Health <= 0)
-        { 
-            OnDie.Invoke();
-        }
-
+        Vector2 dir = (target.position - transform.position).normalized;
+        sr.flipX = dir.x > 0f;
+        rig.velocity = dir * enemySpeed;
     }
+
+    public void GetDamage(float damage)
+    {
+        // 兼容旧入口：旧武器、Lua 或 UnityEvent 仍然可以调用 enemy:GetDamage(value)。
+        // 新流程会立刻转给 DamageSystem，避免这里继续写伤害公式。
+        DamageSystem.ApplyToEnemy(new DamageContext
+        {
+            attacker = null,
+            target = gameObject,
+            hitPoint = transform.position,
+            baseDamage = damage,
+            bonusDamage = 0f,
+            multiplier = 1f,
+            targetType = DamageTargetType.Enemy,
+            sourceType = DamageSourceType.Debug,
+            showDamageNumber = false,
+            ignoreDefense = false,
+            instantKill = false
+        });
+    }
+
+    public DamageResult ApplyDamageFromSystem(float finalDamage)
+    {
+        // 只有 DamageSystem 应该调用这个方法。
+        // Enemy 自己只负责扣血、触发受伤/死亡事件，不再负责计算最终伤害。
+        if (finalDamage <= 0f || isDie)
+        {
+            return new DamageResult { finalDamage = finalDamage, applied = false, killed = isDie };
+        }
+
+        Health -= finalDamage;
+        OnHurt?.Invoke();
+        if (Health <= 0f)
+        {
+            OnDie?.Invoke();
+        }
+
+        return new DamageResult
+        {
+            finalDamage = finalDamage,
+            applied = true,
+            killed = Health <= 0f
+        };
+    }
+
     public void FlashColor(float time)
     {
         sr.material.color = Color.red;
-        Invoke("ResetColor", time);
+        Invoke(nameof(ResetColor), time);
     }
+
     private void ResetColor()
     {
-        
         sr.material.color = originColor;
         isHurt = false;
-
     }
 
-    public void EnemeyHurt() 
+    public void EnemeyHurt()
     {
         isHurt = true;
         AudioController.instance.PlaySE(vfDie);
     }
-    public void EnemyDie() 
+
+    public void EnemyDie()
     {
         isDie = true;
         live = false;
     }
-    public void EnemyDestroy() 
+
+    public void EnemyDestroy()
     {
-        // 死亡收尾先交给 Lua 判断是否完全接管。
-        // Lua 返回 handled=true 时，说明击杀计数、掉落、回收等已经由 Lua/C# 辅助方法处理，这里不再执行默认逻辑。
         if (LuaConfig.TryCallBool("hotfix.enemy.enemy_state", "OnEnemyDestroy", this, 0, out bool handled) && handled)
         {
             return;
@@ -183,15 +202,14 @@ public class Enemy : MonoBehaviour
 
     public void DefaultEnemyDestroy()
     {
-        // Lua 未接管时的 C# 回退：击杀数交给 RunData，再由事件通知 HUD 和任务系统。
         RunData.AddKill();
         pickUpGenerator.DropItems();
         isDie = true;
         ObjPoolManager.instance.ReturnObj(gameObject);
     }
+
     public void UseDefaultStates()
     {
-        // C# 原始状态机。Lua 模块缺失、调试禁用热更时可以回到这套逻辑。
         states.Clear();
         states.Add(EnemyStateType.Idle, new EnemyIdleState(this));
         states.Add(EnemyStateType.Move, new EnemyMoveState(this));
@@ -202,7 +220,6 @@ public class Enemy : MonoBehaviour
 
     public void UseLuaStates()
     {
-        // Lua 状态机。每个 LuaState 会从 enemy_state.lua 中取对应状态 table。
         states.Clear();
         states.Add(EnemyStateType.Idle, new LuaState(this, "hotfix.enemy.enemy_state", "EnemyIdle"));
         states.Add(EnemyStateType.Move, new LuaState(this, "hotfix.enemy.enemy_state", "EnemyMove"));
@@ -210,27 +227,30 @@ public class Enemy : MonoBehaviour
         states.Add(EnemyStateType.Hurt, new LuaState(this, "hotfix.enemy.enemy_state", "EnemyHurt"));
         states.Add(EnemyStateType.Die, new LuaState(this, "hotfix.enemy.enemy_state", "EnemyDie"));
     }
-    public void ColliderAttack() 
+
+    public void ColliderAttack()
     {
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, colliderDisntance, playerMask);
-        foreach (Collider2D hitCollider in hitColliders) 
+        foreach (Collider2D hitCollider in hitColliders)
         {
-            if (hitCollider.CompareTag("Player")) 
+            if (hitCollider.CompareTag("Player") && hitCollider.TryGetComponent(out Player player))
             {
-                hitCollider.GetComponent<Player>().GetDamage(colliderDamage);
+                // 敌人范围攻击玩家，也统一交给 DamageSystem。
+                DamageSystem.ApplyToPlayer(
+                    DamageSystem.CreateEnemyContactDamage(this, player, hitCollider.transform.position, colliderDamage)
+                );
             }
         }
     }
+
     private void OnTriggerStay2D(Collider2D collision)
     {
-        if (collision.CompareTag("Player")) 
+        if (collision.CompareTag("Player") && collision.TryGetComponent(out Player player))
         {
-            collision.GetComponent<Player>().GetDamage(colliderDamage);
+            // 敌人碰撞玩家时不直接调用 Player.GetDamage，避免绕过统一伤害规则。
+            DamageSystem.ApplyToPlayer(
+                DamageSystem.CreateEnemyContactDamage(this, player, collision.transform.position, colliderDamage)
+            );
         }
     }
-    //private void OnDrawGizmos()
-    //{
-    //    Gizmos.color = Color.green;
-    //    Gizmos.DrawWireSphere(transform.position, colliderDisntance);
-    //}
 }

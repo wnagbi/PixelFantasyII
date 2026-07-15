@@ -15,11 +15,6 @@ public sealed class GameBootstrap : MonoBehaviour
     {
         if (loadingView == null)
         {
-            loadingView = FindObjectOfType<StartLoadingView>();
-        }
-
-        if (loadingView == null)
-        {
             Debug.LogWarning("[GameBootstrap] StartLoadingView is missing. Bootstrap will continue without loading UI.");
         }
 

@@ -1,24 +1,31 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-// 环绕刀实体。
-// 负责在碰到敌人时造成 KnifeController 当前伤害。
+// 环绕刀实体。命中敌人后不直接扣血，而是把伤害交给 DamageSystem。
 public class Knife : MonoBehaviour
 {
-    KnifeController weapon;
+    private KnifeController weapon;
+
     private void Start()
     {
-        // 刀是 rotationPoint 的子物体，所以通过 parent.parent 找到 KnifeController。
         weapon = transform.parent.parent.GetComponent<KnifeController>();
     }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.transform.CompareTag("Enemy")) 
+        if (!collision.CompareTag("Enemy") || weapon == null || !collision.TryGetComponent(out Enemy enemy))
         {
-            // 造成伤害并生成飘字。
-            collision.GetComponent<Enemy>().GetDamage(weapon.damage+ PlayerData.getInstance().ExtraDamge);
-            DamageNumberController.instance.SpawnDamage(weapon.damage + PlayerData.getInstance().ExtraDamge,collision.transform.position);
+            return;
         }
+
+        // 武器伤害统一走 DamageSystem：基础伤害来自武器，额外伤害来自玩家 Buff。
+        DamageSystem.ApplyToEnemy(
+            DamageSystem.CreateWeaponDamage(
+                weapon.gameObject,
+                enemy,
+                collision.transform.position,
+                weapon.damage,
+                PlayerData.getInstance().ExtraDamge
+            )
+        );
     }
 }

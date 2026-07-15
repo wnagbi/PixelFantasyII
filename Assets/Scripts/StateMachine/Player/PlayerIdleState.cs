@@ -15,7 +15,7 @@ public class PlayerIdleState : IState
     public void OnEnter()
     {
         // 播放待机动画。
-        player.ani.Play("Idle");
+        player.GetAni().Play("Idle");
     }
 
 

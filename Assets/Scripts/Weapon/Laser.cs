@@ -1,35 +1,52 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-// 浮游炮发射出的激光实体。
-// 负责短暂存在、碰撞敌人并按 FunnelController 当前伤害结算。
+// 浮游炮生成的短生命周期激光。命中后只提交伤害上下文，不直接扣血。
 public class Laser : MonoBehaviour
 {
     private FunnelController weapon;
-    private void Start()
+
+    public void Init(FunnelController owner)
     {
-        // 找到场景中的浮游炮控制器，用它的 damage 作为伤害来源。
-        weapon = FindObjectOfType<FunnelController>();
+        weapon = owner;
     }
+
     private void OnEnable()
     {
-        // 激光只存在很短时间，避免一直挂在浮游炮上造成持续碰撞。
-        Invoke("LaserDestory", 0.5f);
+        Invoke(nameof(LaserDestory), 0.5f);
     }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Enemy")) 
+        if (!collision.CompareTag("Enemy"))
         {
-            // 伤害 = 武器基础伤害 + 玩家临时额外伤害。
-            collision.GetComponent<Enemy>().GetDamage(weapon.damage + PlayerData.getInstance().ExtraDamge);
-            DamageNumberController.instance.SpawnDamage(weapon.damage + PlayerData.getInstance().ExtraDamge, collision.transform.position);
+            return;
         }
+
+        if (weapon == null)
+        {
+            Debug.LogWarning("[Laser] Owner controller is missing. Damage skipped.", this);
+            return;
+        }
+
+        if (!collision.TryGetComponent(out Enemy enemy))
+        {
+            return;
+        }
+
+        // 激光只负责告诉 DamageSystem“谁打了谁、基础伤害是多少、命中点在哪”。
+        DamageSystem.ApplyToEnemy(
+            DamageSystem.CreateWeaponDamage(
+                weapon.gameObject,
+                enemy,
+                collision.transform.position,
+                weapon.damage,
+                PlayerData.getInstance().ExtraDamge
+            )
+        );
     }
 
     public void LaserDestory()
     {
-        // 当前激光不是对象池对象，直接销毁。
         Destroy(gameObject);
     }
 }

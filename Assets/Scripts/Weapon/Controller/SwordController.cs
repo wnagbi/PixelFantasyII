@@ -133,6 +133,14 @@ public class SwordController : HotfixWeaponController
         swords.Add(sword);
     }
 
+    protected override void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
+    {
+        if (instance != null && instance.TryGetComponent(out Sword swordComponent))
+        {
+            swordComponent.Init(this);
+        }
+    }
+
     public void RebuildSwords()
     {
         // 暴露给 Lua：升级后销毁旧飞剑并按当前 count 重新生成。

@@ -2337,6 +2337,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d4e46ff16ffa0a41a8301cd5c04c591, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  waitAnimator: {fileID: 0}
+  waitFinishedSceneName: level1
 --- !u!114 &375291414
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2368,6 +2370,7 @@ MonoBehaviour:
   - {fileID: 3460112230428450613, guid: a9e76633bad7fe44b80d369209a54f67, type: 3}
   - {fileID: 3460112230428450613, guid: 6fdac85a518e2824b82c5c636101160e, type: 3}
   ani: {fileID: 0}
+  playerWeaponList: {fileID: 0}
 --- !u!4 &375291415
 Transform:
   m_ObjectHideFlags: 0

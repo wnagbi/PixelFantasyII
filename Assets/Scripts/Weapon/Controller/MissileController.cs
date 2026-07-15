@@ -39,6 +39,14 @@ public class MissileController : HotfixWeaponController
         
 
     }
+
+    protected override void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
+    {
+        if (instance != null && instance.TryGetComponent(out Missile missile))
+        {
+            missile.Init(this);
+        }
+    }
     
 
     public void levelUp()

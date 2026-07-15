@@ -1,65 +1,60 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
-// 镰刀飞行实体。
-// 负责沿 dirPoint 方向飞出并旋转，生命周期结束后销毁发射点。
+// 镰刀飞行实体。负责移动表现；命中后的伤害结算交给 DamageSystem。
 public class Scythe : MonoBehaviour
 {
     public GameObject dirPoint;
-    bool finishTimer;
-    ScytheController weapon;
-    void Start()
+
+    private bool finishTimer;
+    private ScytheController weapon;
+
+    private void Start()
     {
-        // 通过层级找到 ScytheController，并按武器 timer 启动生命周期。
         weapon = dirPoint.transform.parent.parent.GetComponent<ScytheController>();
-        StartCoroutine(Timer(weapon.returnTimer()));
-        //Debug.Log("生成武器");
+        if (weapon != null)
+        {
+            StartCoroutine(Timer(weapon.returnTimer()));
+        }
     }
+
     private void Update()
     {
-        // dirPoint 向右移动，镰刀自身持续旋转。
-        
+        if (weapon == null || dirPoint == null)
+        {
+            return;
+        }
+
         dirPoint.transform.Translate(weapon.speed * Vector3.right * Time.deltaTime);
         transform.Rotate(-Vector3.forward * weapon.turnSpeed * Time.deltaTime, Space.Self);
-        if (finishTimer) 
+        if (finishTimer)
         {
-            // 生命周期结束后销毁 dirPoint，连带清理子物体。
-            //Debug.Log("yes");
             Destroy(dirPoint);
         }
-
-        
-        
     }
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.CompareTag("Enemy")) 
+        if (!collision.CompareTag("Enemy") || weapon == null || !collision.TryGetComponent(out Enemy enemy))
         {
-            // 命中敌人时按当前武器伤害结算。
-            collision.GetComponent<Enemy>().GetDamage(weapon.damage + PlayerData.getInstance().ExtraDamge);
-            DamageNumberController.instance.SpawnDamage(weapon.damage + PlayerData.getInstance().ExtraDamge, collision.transform.position);
+            return;
         }
+
+        // 不在武器脚本里直接扣血或生成伤害数字，避免每个武器重复写同一套公式。
+        DamageSystem.ApplyToEnemy(
+            DamageSystem.CreateWeaponDamage(
+                weapon.gameObject,
+                enemy,
+                collision.transform.position,
+                weapon.damage,
+                PlayerData.getInstance().ExtraDamge
+            )
+        );
     }
-    IEnumerator Timer(float timer) 
+
+    private IEnumerator Timer(float timer)
     {
-        // 按秒等待，再处理小数部分，最后标记生命周期结束。
-        for (int i = 0; i < timer; i++) 
-        {
-            yield return new WaitForSeconds(1);
-            //Debug.Log(i);
-        }
-        float remainTime = timer - (int)timer;
-        if (remainTime != 0) 
-        {
-            
-            yield return new WaitForSeconds(remainTime);
-            //Debug.Log(timer);
-            
-        }
+        yield return new WaitForSeconds(timer);
         finishTimer = true;
     }
-
-
-
 }

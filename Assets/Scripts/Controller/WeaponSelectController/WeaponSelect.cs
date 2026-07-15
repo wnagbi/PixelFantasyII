@@ -26,9 +26,7 @@ public class WeaponSelect : MonoBehaviour
     public LocalizedString nameString;
     private void Start()
     {
-        // 根据 id 找到玩家身上的 WeaponList 和对应 Weapon 数据。
-        weaponList = FindObjectOfType<WeaponList>();
-        weapon = weaponList.weaponList[id-1].GetComponent<Weapon>();
+        BindWeapon();
     }
     private void Update()
     {
@@ -37,6 +35,15 @@ public class WeaponSelect : MonoBehaviour
     }
     public void DescribleGenerator() //Updata Describle of Selection Weapoin
     {
+        if (weapon == null)
+        {
+            BindWeapon();
+            if (weapon == null)
+            {
+                return;
+            }
+        }
+
         // 根据武器类型和等级拼 Localization key，例如 knifeLevel2。
         int level = weapon.weaponLevel;
         nameString.TableEntryReference = $"{weaponType}";
@@ -82,5 +89,22 @@ public class WeaponSelect : MonoBehaviour
                 ChangeGet();
                 break;
         }
+    }
+
+    public void Initialize(WeaponList list)
+    {
+        weaponList = list;
+        BindWeapon();
+    }
+
+    private void BindWeapon()
+    {
+        if (weaponList == null || weaponList.weaponList == null || id <= 0 || id > weaponList.weaponList.Length)
+        {
+            return;
+        }
+
+        GameObject weaponObject = weaponList.weaponList[id - 1];
+        weapon = weaponObject != null ? weaponObject.GetComponent<Weapon>() : null;
     }
 }

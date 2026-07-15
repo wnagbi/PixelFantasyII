@@ -191,7 +191,9 @@ public class HotfixWeaponController : WeaponController
         }
 
         Vector2 position = (Vector2)transform.position + new Vector2(x, y);
-        return Instantiate(sourcePrefab, position, Quaternion.Euler(0f, 0f, rotationZ));
+        GameObject instance = Instantiate(sourcePrefab, position, Quaternion.Euler(0f, 0f, rotationZ));
+        OnRuntimePrefabInstantiated(instance, false);
+        return instance;
     }
 
     public IEnumerator LoadAddressablePrefabs()
@@ -246,9 +248,11 @@ public class HotfixWeaponController : WeaponController
             return null;
         }
 
-        return parent == null
+        GameObject instance = parent == null
             ? Instantiate(sourcePrefab, position, rotation)
             : Instantiate(sourcePrefab, position, rotation, parent);
+        OnRuntimePrefabInstantiated(instance, false);
+        return instance;
     }
 
     protected GameObject InstantiateRuntimeSecondaryPrefab(GameObject fallbackPrefab, Vector3 position, Quaternion rotation, Transform parent = null)
@@ -260,9 +264,11 @@ public class HotfixWeaponController : WeaponController
             return null;
         }
 
-        return parent == null
+        GameObject instance = parent == null
             ? Instantiate(sourcePrefab, position, rotation)
             : Instantiate(sourcePrefab, position, rotation, parent);
+        OnRuntimePrefabInstantiated(instance, true);
+        return instance;
     }
 
     protected GameObject GetRuntimePrefab(GameObject fallbackPrefab)
@@ -276,6 +282,10 @@ public class HotfixWeaponController : WeaponController
     }
 
     protected virtual void OnHotfixStartReady()
+    {
+    }
+
+    protected virtual void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
     {
     }
 

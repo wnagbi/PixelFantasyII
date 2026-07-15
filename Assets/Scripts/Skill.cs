@@ -63,6 +63,7 @@ public class Skill : MonoBehaviour
         nameText.text = nameSkillString.GetLocalizedString();
         descibleText.text = describleString.GetLocalizedString();
     }
+   
 
     public void HandleClickSkill()
     {

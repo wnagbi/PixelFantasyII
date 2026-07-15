@@ -23,6 +23,7 @@ public class EnemySpawner : MonoBehaviour
     public Vector3 maxSpawnOffset;
     public Vector3 minSpawnOffset;
     private float gameTime;
+    private bool missingPlayerWarningShown;
     private void Start()
     {
         // 刷怪基础参数优先从 Lua 配置读取。
@@ -33,10 +34,15 @@ public class EnemySpawner : MonoBehaviour
         maxDifficultyTime = LuaConfig.GetFloat("config.stage_config", "enemy_spawn", "max_difficulty_time", maxDifficultyTime);
         enemyPoolName = LuaConfig.GetString("config.stage_config", "enemy_spawn", "pool_name", enemyPoolName);
         spawnCounter = initalSpawnInterval;
-        player = FindAnyObjectByType<Player>().transform;
+        TryBindPlayer();
     }
     private void Update()
     {
+        if (player == null && !TryBindPlayer())
+        {
+            return;
+        }
+            
             
         spawnCounter -= Time.deltaTime;
         gameTime += Time.deltaTime;
@@ -61,6 +67,22 @@ public class EnemySpawner : MonoBehaviour
         }
         //Debug.Log(GetCurrentSpawnInterval());
         
+    }
+
+    private bool TryBindPlayer()
+    {
+        if (PlayerRuntimeRegistry.TryGetPlayerTransform(out player))
+        {
+            return true;
+        }
+
+        if (!missingPlayerWarningShown)
+        {
+            Debug.LogWarning("[EnemySpawner] Player is not registered yet. Spawn will wait.", this);
+            missingPlayerWarningShown = true;
+        }
+
+        return false;
     }
 
     public float GetCurrentSpawnInterval()  //刷怪间隔计算

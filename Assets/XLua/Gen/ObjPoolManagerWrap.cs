@@ -21,10 +21,12 @@ namespace XLua.CSObjectWrap
         {
 			ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
 			System.Type type = typeof(ObjPoolManager);
-			Utils.BeginObjectRegister(type, L, translator, 0, 2, 1, 1);
+			Utils.BeginObjectRegister(type, L, translator, 0, 4, 1, 1);
 			
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetObj", _m_GetObj);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "ReturnObj", _m_ReturnObj);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "PreloadAddressablePrefab", _m_PreloadAddressablePrefab);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "ReplacePoolPrefab", _m_ReplacePoolPrefab);
 			
 			
 			Utils.RegisterFunc(L, Utils.GETTER_IDX, "pools", _g_get_pools);
@@ -126,6 +128,66 @@ namespace XLua.CSObjectWrap
                     
                     
                     return 0;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_PreloadAddressablePrefab(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                ObjPoolManager gen_to_be_invoked = (ObjPoolManager)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    string _poolName = LuaAPI.lua_tostring(L, 2);
+                    string _prefabKey = LuaAPI.lua_tostring(L, 3);
+                    
+                        var gen_ret = gen_to_be_invoked.PreloadAddressablePrefab( _poolName, _prefabKey );
+                        translator.PushAny(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_ReplacePoolPrefab(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                ObjPoolManager gen_to_be_invoked = (ObjPoolManager)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    string _poolName = LuaAPI.lua_tostring(L, 2);
+                    UnityEngine.GameObject _prefab = (UnityEngine.GameObject)translator.GetObject(L, 3, typeof(UnityEngine.GameObject));
+                    
+                        var gen_ret = gen_to_be_invoked.ReplacePoolPrefab( _poolName, _prefab );
+                        LuaAPI.lua_pushboolean(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
                 }
                 
             } catch(System.Exception gen_e) {

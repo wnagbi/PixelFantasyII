@@ -32,6 +32,14 @@ public class TornadoController : HotfixWeaponController
         
     }
 
+    protected override void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
+    {
+        if (instance != null && instance.TryGetComponent(out Tornado tornadoComponent))
+        {
+            tornadoComponent.Init(this);
+        }
+    }
+
     public void RebuildTornadoes()
     {
         // 暴露给 Lua：升级或配置变化后销毁旧龙卷风并重新生成。

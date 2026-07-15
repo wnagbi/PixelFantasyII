@@ -21,6 +21,7 @@ public class PickUp : MonoBehaviour
     private float originDistance;
     private float originSpeed;
     public Transform player;
+    private bool missingPlayerWarningShown;
     private void Awake()
     {
         originDistance = pickUpDistance;
@@ -45,10 +46,15 @@ public class PickUp : MonoBehaviour
     }
     private void Start()
     {
-        player = FindAnyObjectByType<Player>().transform;
+        TryBindPlayer();
     }
     private void Update()
     {
+        if (player == null && !TryBindPlayer())
+        {
+            return;
+        }
+
         if(Vector2.Distance(transform.position,player.position) < pickUpDistance) 
         {
             Vector2 dir = (player.position - transform.position).normalized;
@@ -95,5 +101,21 @@ public class PickUp : MonoBehaviour
         }
         ObjPoolManager.instance.ReturnObj(gameObject);
 
+    }
+
+    private bool TryBindPlayer()
+    {
+        if (PlayerRuntimeRegistry.TryGetPlayerTransform(out player))
+        {
+            return true;
+        }
+
+        if (!missingPlayerWarningShown)
+        {
+            Debug.LogWarning("[PickUp] Player is not registered yet. Pickup movement will wait.", this);
+            missingPlayerWarningShown = true;
+        }
+
+        return false;
     }
 }

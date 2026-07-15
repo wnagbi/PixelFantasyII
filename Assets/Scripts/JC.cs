@@ -61,13 +61,23 @@ public class JC : MonoBehaviour
             Enemy enemy = results[i].GetComponent<Enemy>();
             if (enemy != null)
             {
-                // 直接秒杀
-                // 这里通过 Enemy.GetDamage 走正常受伤/死亡流程，而不是直接销毁敌人。
-                enemy.GetDamage(9999);
-                DamageNumberController.instance.SpawnDamage(
-                    9999,
-                    enemy.transform.position
-                );
+                // 次元斩属于技能伤害，这里用 instantKill 表达秒杀语义。
+                // 这样仍会走敌人的受伤/死亡事件，而不是直接销毁敌人对象。
+                DamageContext context = new DamageContext
+                {
+                    attacker = gameObject,
+                    target = enemy.gameObject,
+                    hitPoint = enemy.transform.position,
+                    baseDamage = 0f,
+                    bonusDamage = 0f,
+                    multiplier = 1f,
+                    targetType = DamageTargetType.Enemy,
+                    sourceType = DamageSourceType.Skill,
+                    showDamageNumber = true,
+                    ignoreDefense = true,
+                    instantKill = true
+                };
+                DamageSystem.ApplyToEnemy(context);
             }
         }
     }

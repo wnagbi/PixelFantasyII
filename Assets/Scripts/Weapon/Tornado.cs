@@ -16,13 +16,17 @@ public class Tornado : MonoBehaviour
     private Vector3 newPos;
     private bool isAttack;
     
-    private void Start()
+    public void Init(TornadoController owner)
     {
-        // 找到龙卷风控制器，用它的 speed、damage、moveRange 等数值。
-        weapon = FindObjectOfType<TornadoController>();
+        weapon = owner;
     }
     private void Update()
     {
+        if (weapon == null)
+        {
+            return;
+        }
+
         // 没有目标点时选择新目标；有目标点时向目标点插值移动。
         if (!isAttack)
             Attack();
@@ -45,6 +49,11 @@ public class Tornado : MonoBehaviour
     {
         if (collision.CompareTag("Enemy"))
         {
+            if (weapon == null)
+            {
+                return;
+            }
+
             // 进入龙卷风范围时减速。
             collision.GetComponent<Enemy>().enemySpeed /= 2;
         }
@@ -53,15 +62,37 @@ public class Tornado : MonoBehaviour
     {
         if (collision.CompareTag("Enemy"))
         {
-            // 停留期间持续造成伤害。
-            collision.GetComponent<Enemy>().GetDamage(weapon.damage + PlayerData.getInstance().ExtraDamge/10);
-            DamageNumberController.instance.SpawnDamage(weapon.damage + PlayerData.getInstance().ExtraDamge / 10, collision.transform.position);
+            if (weapon == null)
+            {
+                return;
+            }
+
+            if (!collision.TryGetComponent(out Enemy enemy))
+            {
+                return;
+            }
+
+            // 龙卷风持续伤害也统一走 DamageSystem，保留原本 ExtraDamge / 10 的规则。
+            DamageSystem.ApplyToEnemy(
+                DamageSystem.CreateWeaponDamage(
+                    weapon.gameObject,
+                    enemy,
+                    collision.transform.position,
+                    weapon.damage,
+                    PlayerData.getInstance().ExtraDamge / 10f
+                )
+            );
         }
     }
     private void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.CompareTag("Enemy"))
         {
+            if (weapon == null)
+            {
+                return;
+            }
+
             // 离开范围时恢复速度。
             collision.GetComponent<Enemy>().enemySpeed *= 2;
         }

@@ -21,8 +21,9 @@ namespace XLua.CSObjectWrap
         {
 			ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
 			System.Type type = typeof(Player);
-			Utils.BeginObjectRegister(type, L, translator, 0, 6, 9, 9);
+			Utils.BeginObjectRegister(type, L, translator, 0, 7, 8, 8);
 			
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetAni", _m_GetAni);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "TransitionState", _m_TransitionState);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "OnMove", _m_OnMove);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "Move", _m_Move);
@@ -39,7 +40,6 @@ namespace XLua.CSObjectWrap
             Utils.RegisterFunc(L, Utils.GETTER_IDX, "pickUpSet", _g_get_pickUpSet);
             Utils.RegisterFunc(L, Utils.GETTER_IDX, "isRuning", _g_get_isRuning);
             Utils.RegisterFunc(L, Utils.GETTER_IDX, "isHurt", _g_get_isHurt);
-            Utils.RegisterFunc(L, Utils.GETTER_IDX, "ani", _g_get_ani);
             
 			Utils.RegisterFunc(L, Utils.SETTER_IDX, "curMaxHealth", _s_set_curMaxHealth);
             Utils.RegisterFunc(L, Utils.SETTER_IDX, "curHealth", _s_set_curHealth);
@@ -49,7 +49,6 @@ namespace XLua.CSObjectWrap
             Utils.RegisterFunc(L, Utils.SETTER_IDX, "pickUpSet", _s_set_pickUpSet);
             Utils.RegisterFunc(L, Utils.SETTER_IDX, "isRuning", _s_set_isRuning);
             Utils.RegisterFunc(L, Utils.SETTER_IDX, "isHurt", _s_set_isHurt);
-            Utils.RegisterFunc(L, Utils.SETTER_IDX, "ani", _s_set_ani);
             
 			
 			Utils.EndObjectRegister(type, L, translator, null, null,
@@ -94,6 +93,34 @@ namespace XLua.CSObjectWrap
         
         
         
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_GetAni(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                Player gen_to_be_invoked = (Player)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    
+                        var gen_ret = gen_to_be_invoked.GetAni(  );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
         
         [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
         static int _m_TransitionState(RealStatePtr L)
@@ -375,20 +402,6 @@ namespace XLua.CSObjectWrap
             return 1;
         }
         
-        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
-        static int _g_get_ani(RealStatePtr L)
-        {
-		    try {
-                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
-			
-                Player gen_to_be_invoked = (Player)translator.FastGetCSObj(L, 1);
-                translator.Push(L, gen_to_be_invoked.ani);
-            } catch(System.Exception gen_e) {
-                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
-            }
-            return 1;
-        }
-        
         
         
         [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
@@ -504,21 +517,6 @@ namespace XLua.CSObjectWrap
 			
                 Player gen_to_be_invoked = (Player)translator.FastGetCSObj(L, 1);
                 gen_to_be_invoked.isHurt = LuaAPI.lua_toboolean(L, 2);
-            
-            } catch(System.Exception gen_e) {
-                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
-            }
-            return 0;
-        }
-        
-        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
-        static int _s_set_ani(RealStatePtr L)
-        {
-		    try {
-                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
-			
-                Player gen_to_be_invoked = (Player)translator.FastGetCSObj(L, 1);
-                gen_to_be_invoked.ani = (UnityEngine.Animator)translator.GetObject(L, 2, typeof(UnityEngine.Animator));
             
             } catch(System.Exception gen_e) {
                 return LuaAPI.luaL_error(L, "c# exception:" + gen_e);

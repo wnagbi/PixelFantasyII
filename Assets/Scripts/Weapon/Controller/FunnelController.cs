@@ -64,6 +64,14 @@ public class FunnelController : HotfixWeaponController
         
     }
 
+    protected override void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
+    {
+        if (isSecondaryPrefab && instance != null && instance.TryGetComponent(out Laser laserComponent))
+        {
+            laserComponent.Init(this);
+        }
+    }
+
     public void RebuildFunnels()
     {
         // 暴露给 Lua：升级后清空并按当前 count 重建浮游炮。

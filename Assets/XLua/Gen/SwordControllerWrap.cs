@@ -93,10 +93,10 @@ namespace XLua.CSObjectWrap
             
                 
                 {
-                    UnityEngine.Transform _sword = (UnityEngine.Transform)translator.GetObject(L, 2, typeof(UnityEngine.Transform));
+                    UnityEngine.Transform _swordTransform = (UnityEngine.Transform)translator.GetObject(L, 2, typeof(UnityEngine.Transform));
                     UnityEngine.Transform _target = (UnityEngine.Transform)translator.GetObject(L, 3, typeof(UnityEngine.Transform));
                     
-                    gen_to_be_invoked.MoveObject( _sword, _target );
+                    gen_to_be_invoked.MoveObject( _swordTransform, _target );
                     
                     
                     
@@ -122,10 +122,10 @@ namespace XLua.CSObjectWrap
             
                 
                 {
-                    UnityEngine.Transform _sword = (UnityEngine.Transform)translator.GetObject(L, 2, typeof(UnityEngine.Transform));
+                    UnityEngine.Transform _swordTransform = (UnityEngine.Transform)translator.GetObject(L, 2, typeof(UnityEngine.Transform));
                     UnityEngine.Transform _target = (UnityEngine.Transform)translator.GetObject(L, 3, typeof(UnityEngine.Transform));
                     
-                    gen_to_be_invoked.RotationSword( _sword, _target );
+                    gen_to_be_invoked.RotationSword( _swordTransform, _target );
                     
                     
                     

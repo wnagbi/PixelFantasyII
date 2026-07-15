@@ -20,6 +20,8 @@ public class WeaponSelectController : MonoBehaviour
     public List<GameObject> selectWeapon;
     public static WeaponSelectController instance;
     public Animator ani;
+    [SerializeField] private WeaponList playerWeaponList;
+
 
     private void Awake()
     {
@@ -30,8 +32,7 @@ public class WeaponSelectController : MonoBehaviour
     private void Start()
     {
         // 升级选择时会暂时禁用玩家 Animator，避免暂停时动画状态异常。
-        GameObject player= FindObjectOfType<Player>().gameObject;
-        ani = player.GetComponent<Animator>();
+        TryBindPlayerReferences();
     }
     public void GenerateSelect() //使用洗牌算法
     {
@@ -50,10 +51,27 @@ public class WeaponSelectController : MonoBehaviour
         }
 
         // 在左中右三个位置生成选择卡。
+        if (playerWeaponList == null)
+        {
+            TryBindPlayerReferences();
+        }
+
+        if (playerWeaponList == null)
+        {
+            Debug.LogWarning("[WeaponSelectController] WeaponList is missing. Cannot generate weapon selection cards.", this);
+            return;
+        }
+
         left = Instantiate(selectWeapon[0], leftPosition.transform.position, Quaternion.identity, leftPosition.transform);
         mid = Instantiate(selectWeapon[1], midPosition.transform.position, Quaternion.identity, midPosition.transform);
         right = Instantiate(selectWeapon[2], rightPosition.transform.position, Quaternion.identity, rightPosition.transform);
-        ani.enabled = false;
+        InitializeWeaponSelect(left);
+        InitializeWeaponSelect(mid);
+        InitializeWeaponSelect(right);
+        if (ani != null)
+        {
+            ani.enabled = false;
+        }
     }
 
     public void WeapSelect() 
@@ -64,6 +82,10 @@ public class WeaponSelectController : MonoBehaviour
         right = null;
         mid = null;
         GenerateSelect();
+        if (left == null || mid == null || right == null)
+        {
+            return;
+        }
         box.SetActive(true);
         Time.timeScale = 0f;
     }
@@ -84,7 +106,7 @@ public class WeaponSelectController : MonoBehaviour
         mid.GetComponent<WeaponSelect>().LevelUp();
         Time.timeScale = 1f;
         box.SetActive(false);
-        ani.enabled = true;
+        ani.enabled = true;  
         FinishSelect();
         
     }
@@ -110,6 +132,31 @@ public class WeaponSelectController : MonoBehaviour
     {
         // 武器满级后从可选池移除，避免后续升级再次抽到。
         selectWeapon.RemoveAll(obj =>obj.name == name);
+    }
+
+    private bool TryBindPlayerReferences()
+    {
+        Player player = PlayerRuntimeRegistry.GetPlayer();
+        ani = player.GetAni();
+        playerWeaponList = player.GetComponentInChildren<WeaponList>();
+        return playerWeaponList != null;
+    }
+
+    private void InitializeWeaponSelect(GameObject selectObject)
+    {
+        if (selectObject == null)
+        {
+            return;
+        }
+
+        WeaponSelect weaponSelect = selectObject.GetComponent<WeaponSelect>();
+        if (weaponSelect == null)
+        {
+            Debug.LogWarning("[WeaponSelectController] Generated select card has no WeaponSelect component.", selectObject);
+            return;
+        }
+
+        weaponSelect.Initialize(playerWeaponList);
     }
 
 }

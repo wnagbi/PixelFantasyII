@@ -21,14 +21,22 @@ namespace XLua.CSObjectWrap
         {
 			ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
 			System.Type type = typeof(HotfixWeaponController);
-			Utils.BeginObjectRegister(type, L, translator, 0, 10, 2, 2);
+			Utils.BeginObjectRegister(type, L, translator, 0, 18, 4, 4);
 			
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "LuaLevelUp", _m_LuaLevelUp);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "ResetCooldown", _m_ResetCooldown);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "SpawnPrefabAt", _m_SpawnPrefabAt);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "SpawnPrefab", _m_SpawnPrefab);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "SpawnPrefabUnder", _m_SpawnPrefabUnder);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetNearestEnemy", _m_GetNearestEnemy);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetNearestEnemyInRange", _m_GetNearestEnemyInRange);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetRandomEnemy", _m_GetRandomEnemy);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetNearestEnemyTransform", _m_GetNearestEnemyTransform);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "GetRandomEnemyTransform", _m_GetRandomEnemyTransform);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "SpawnCustomPrefab", _m_SpawnCustomPrefab);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "LoadAddressablePrefabs", _m_LoadAddressablePrefabs);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "SpawnAddressableOrFallback", _m_SpawnAddressableOrFallback);
+			Utils.RegisterFunc(L, Utils.METHOD_IDX, "SpawnAddressableOrFallbackUnder", _m_SpawnAddressableOrFallbackUnder);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "ClearChildren", _m_ClearChildren);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "DestroyGameObject", _m_DestroyGameObject);
 			Utils.RegisterFunc(L, Utils.METHOD_IDX, "RefreshWeapon", _m_RefreshWeapon);
@@ -37,9 +45,13 @@ namespace XLua.CSObjectWrap
 			
 			Utils.RegisterFunc(L, Utils.GETTER_IDX, "luaModuleName", _g_get_luaModuleName);
             Utils.RegisterFunc(L, Utils.GETTER_IDX, "enableLuaHotfix", _g_get_enableLuaHotfix);
+            Utils.RegisterFunc(L, Utils.GETTER_IDX, "prefabKey", _g_get_prefabKey);
+            Utils.RegisterFunc(L, Utils.GETTER_IDX, "secondaryPrefabKey", _g_get_secondaryPrefabKey);
             
 			Utils.RegisterFunc(L, Utils.SETTER_IDX, "luaModuleName", _s_set_luaModuleName);
             Utils.RegisterFunc(L, Utils.SETTER_IDX, "enableLuaHotfix", _s_set_enableLuaHotfix);
+            Utils.RegisterFunc(L, Utils.SETTER_IDX, "prefabKey", _s_set_prefabKey);
+            Utils.RegisterFunc(L, Utils.SETTER_IDX, "secondaryPrefabKey", _s_set_secondaryPrefabKey);
             
 			
 			Utils.EndObjectRegister(type, L, translator, null, null,
@@ -233,6 +245,147 @@ namespace XLua.CSObjectWrap
         }
         
         [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_GetNearestEnemy(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    
+                        var gen_ret = gen_to_be_invoked.GetNearestEnemy(  );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_GetNearestEnemyInRange(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    float _range = (float)LuaAPI.lua_tonumber(L, 2);
+                    
+                        var gen_ret = gen_to_be_invoked.GetNearestEnemyInRange( _range );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_GetRandomEnemy(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    
+                        var gen_ret = gen_to_be_invoked.GetRandomEnemy(  );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_GetNearestEnemyTransform(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    
+                        var gen_ret = gen_to_be_invoked.GetNearestEnemyTransform(  );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_GetRandomEnemyTransform(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    
+                        var gen_ret = gen_to_be_invoked.GetRandomEnemyTransform(  );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
         static int _m_SpawnCustomPrefab(RealStatePtr L)
         {
 		    try {
@@ -251,6 +404,97 @@ namespace XLua.CSObjectWrap
                     float _rotationZ = (float)LuaAPI.lua_tonumber(L, 5);
                     
                         var gen_ret = gen_to_be_invoked.SpawnCustomPrefab( _sourcePrefab, _x, _y, _rotationZ );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_LoadAddressablePrefabs(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    
+                        var gen_ret = gen_to_be_invoked.LoadAddressablePrefabs(  );
+                        translator.PushAny(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_SpawnAddressableOrFallback(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    float _x = (float)LuaAPI.lua_tonumber(L, 2);
+                    float _y = (float)LuaAPI.lua_tonumber(L, 3);
+                    float _rotationZ = (float)LuaAPI.lua_tonumber(L, 4);
+                    
+                        var gen_ret = gen_to_be_invoked.SpawnAddressableOrFallback( _x, _y, _rotationZ );
+                        translator.Push(L, gen_ret);
+                    
+                    
+                    
+                    return 1;
+                }
+                
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _m_SpawnAddressableOrFallbackUnder(RealStatePtr L)
+        {
+		    try {
+            
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+            
+            
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+            
+            
+                
+                {
+                    UnityEngine.Transform _parent = (UnityEngine.Transform)translator.GetObject(L, 2, typeof(UnityEngine.Transform));
+                    float _x = (float)LuaAPI.lua_tonumber(L, 3);
+                    float _y = (float)LuaAPI.lua_tonumber(L, 4);
+                    float _rotationZ = (float)LuaAPI.lua_tonumber(L, 5);
+                    
+                        var gen_ret = gen_to_be_invoked.SpawnAddressableOrFallbackUnder( _parent, _x, _y, _rotationZ );
                         translator.Push(L, gen_ret);
                     
                     
@@ -406,6 +650,34 @@ namespace XLua.CSObjectWrap
             return 1;
         }
         
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _g_get_prefabKey(RealStatePtr L)
+        {
+		    try {
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+			
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+                LuaAPI.lua_pushstring(L, gen_to_be_invoked.prefabKey);
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            return 1;
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _g_get_secondaryPrefabKey(RealStatePtr L)
+        {
+		    try {
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+			
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+                LuaAPI.lua_pushstring(L, gen_to_be_invoked.secondaryPrefabKey);
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            return 1;
+        }
+        
         
         
         [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
@@ -431,6 +703,36 @@ namespace XLua.CSObjectWrap
 			
                 HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
                 gen_to_be_invoked.enableLuaHotfix = LuaAPI.lua_toboolean(L, 2);
+            
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            return 0;
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _s_set_prefabKey(RealStatePtr L)
+        {
+		    try {
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+			
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+                gen_to_be_invoked.prefabKey = LuaAPI.lua_tostring(L, 2);
+            
+            } catch(System.Exception gen_e) {
+                return LuaAPI.luaL_error(L, "c# exception:" + gen_e);
+            }
+            return 0;
+        }
+        
+        [MonoPInvokeCallbackAttribute(typeof(LuaCSFunction))]
+        static int _s_set_secondaryPrefabKey(RealStatePtr L)
+        {
+		    try {
+                ObjectTranslator translator = ObjectTranslatorPool.Instance.Find(L);
+			
+                HotfixWeaponController gen_to_be_invoked = (HotfixWeaponController)translator.FastGetCSObj(L, 1);
+                gen_to_be_invoked.secondaryPrefabKey = LuaAPI.lua_tostring(L, 2);
             
             } catch(System.Exception gen_e) {
                 return LuaAPI.luaL_error(L, "c# exception:" + gen_e);

@@ -15,7 +15,7 @@ public class PlayerMoveState : IState
     public void OnEnter()
     {
         // 播放移动动画。
-        player.ani.Play("Move");
+        player.GetAni().Play("Move");
     }
 
 

@@ -6,9 +6,9 @@
 	    <type fullname="Tutorial.BaseClass" preserve="all"/>
 		<type fullname="Tutorial.TestEnum" preserve="all"/>
 		<type fullname="Tutorial.DerivedClass" preserve="all"/>
-		<type fullname="Tutorial.DerivedClass+TestEnumInner" preserve="all"/>
 		<type fullname="Tutorial.ICalc" preserve="all"/>
 		<type fullname="Tutorial.DerivedClassExtensions" preserve="all"/>
+		<type fullname="Tutorial.DerivedClass+TestEnumInner" preserve="all"/>
 		<type fullname="PlayerData" preserve="all"/>
 		<type fullname="Player" preserve="all"/>
 		<type fullname="PlayerStateType" preserve="all"/>

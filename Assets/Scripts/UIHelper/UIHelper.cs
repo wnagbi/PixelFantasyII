@@ -1,25 +1,35 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-// UI 辅助函数集合。
-// 当前只提供等待动画播放结束的工具方法。
+// Small UI helper methods used by animation events or UI buttons.
 public class UIHelper : MonoBehaviour
 {
+    [SerializeField] private Animator targetAnimator;
+
+    // Kept for existing UnityEvent string bindings. The string is no longer used for lookup.
     public void WaitForAniFinished(string ani)
     {
-        // 根据对象名找到 Animator，并等待当前动画状态播放到结尾。
-        // 注意：这里是同步 while，复杂场景中建议改成 Coroutine 避免阻塞主线程。
-        Animator animator = GameObject.Find(ani).GetComponent<Animator>();
-        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        // wait for the animation to finish
-        while (stateInfo.normalizedTime < 1.0f)
+        StartCoroutine(WaitForAnimator(targetAnimator));
+    }
+
+    public void WaitForAniFinished(Animator animator)
+    {
+        StartCoroutine(WaitForAnimator(animator));
+    }
+
+    private IEnumerator WaitForAnimator(Animator animator)
+    {
+        if (animator == null)
         {
-            stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (stateInfo.normalizedTime >= 1.0f)
-            {
-                break;
-            }
+            Debug.LogWarning("[UIHelper] Animator reference is missing.", this);
+            yield break;
+        }
+
+        yield return null;
+
+        while (animator.IsInTransition(0) || animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
+        {
+            yield return null;
         }
     }
 }

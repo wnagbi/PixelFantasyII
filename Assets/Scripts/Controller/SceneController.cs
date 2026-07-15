@@ -1,50 +1,55 @@
 using System.Collections;
-using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// 场景和时间暂停控制器。
-// 主要由 UI 按钮事件调用：暂停、恢复、切换场景。
+// Controls pause/resume and simple scene transitions.
 public class SceneController : MonoBehaviour
 {
+    [SerializeField] private Animator waitAnimator;
+    [SerializeField] private string waitFinishedSceneName = "level1";
 
-    public void TimePause() 
+    public void TimePause()
     {
-        // 暂停游戏内时间，Update 仍执行但物理、动画等受 timeScale 影响的逻辑会停住。
         Time.timeScale = 0f;
-     
     }
+
     public void TimeDisPause()
     {
-        // 恢复正常游戏速度。
         Time.timeScale = 1f;
     }
 
-
-    public void Teleport(string name) 
+    public void Teleport(string name)
     {
-        // load the scene
-        // 切换场景时顺手恢复 timeScale，避免从暂停菜单进新场景后仍然暂停。
         SceneManager.LoadScene(name);
-        Time.timeScale = 1.0f;
-
+        Time.timeScale = 1f;
     }
+
+    // Kept for existing UnityEvent string bindings. The string is no longer used for lookup.
     public void WaitForAniFinished(string ani)
     {
-        // 根据名字找到 Animator，并等待当前动画播放完成后进入 level1。
-        // 注意：这里的 while 是同步循环，后续更适合改成 Coroutine。
-        Animator animator = GameObject.Find(ani).GetComponent<Animator>();
-        AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        // wait for the animation to finish
-        while (stateInfo.normalizedTime < 1.0f)
+        StartCoroutine(WaitForAnimatorAndTeleport(waitAnimator, waitFinishedSceneName));
+    }
+
+    public void WaitForAniFinished(Animator animator)
+    {
+        StartCoroutine(WaitForAnimatorAndTeleport(animator, waitFinishedSceneName));
+    }
+
+    private IEnumerator WaitForAnimatorAndTeleport(Animator animator, string sceneName)
+    {
+        if (animator == null)
         {
-            stateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (stateInfo.normalizedTime >= 1.0f)
-            {
-                Teleport("level1");
-                break;
-            }
+            Debug.LogWarning("[SceneController] Animator reference is missing.", this);
+            yield break;
         }
+
+        yield return null;
+
+        while (animator.IsInTransition(0) || animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
+        {
+            yield return null;
+        }
+
+        Teleport(sceneName);
     }
 }

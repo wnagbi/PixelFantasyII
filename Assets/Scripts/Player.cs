@@ -1,23 +1,17 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
-using UnityEngine.InputSystem;
 using UnityEngine.Events;
+using UnityEngine.InputSystem;
 
-/// <summary>
-/// Enum for player state
-/// </summary>
 public enum PlayerStateType
 {
-    Idle, Move, Hurt, Die
+    Idle,
+    Move,
+    Hurt,
+    Die
 }
 
-/// <summary>
-/// This class is responsible for the player's movement, health, and state transitions.
-/// </summary>
-// 玩家主体控制器。
-// 负责输入移动、动画参数、状态切换、受伤事件，并把实时数值同步到 PlayerData。
+// Main player controller: movement, state machine and damage entry.
 public class Player : MonoBehaviour
 {
     [Header("Player")]
@@ -30,20 +24,15 @@ public class Player : MonoBehaviour
     public GameObject pickUpSet;
     [HideInInspector] public bool isRuning;
     [HideInInspector] public bool isHurt;
+    [HideInInspector] public Animator ani;
 
     private Color originColor;
-    private Vector2 InputValue;
-    [HideInInspector]public Animator ani;
+    private Vector2 inputValue;
     private Rigidbody2D rig;
     private SpriteRenderer sr;
     private IState currentState;
-    private Dictionary<PlayerStateType,IState> states = new Dictionary<PlayerStateType,IState>();
+    private readonly Dictionary<PlayerStateType, IState> states = new Dictionary<PlayerStateType, IState>();
 
-
-
-    /// <summary>
-    /// When the player is created, the player's state is set to idle.
-    /// </summary>
     private void Awake()
     {
         ani = GetComponent<Animator>();
@@ -53,25 +42,23 @@ public class Player : MonoBehaviour
         PlayerData.getInstance().CurrentMaxHealth = curMaxHealth;
         PlayerData.getInstance().CurrentHealth = curHealth;
         PlayerData.getInstance().CurrentSpeed = curSpeed;
-        
+
         originColor = sr.color;
         states.Add(PlayerStateType.Idle, new PlayerIdleState(this));
         states.Add(PlayerStateType.Move, new PlayerMoveState(this));
         states.Add(PlayerStateType.Hurt, new PlayerHurtState(this));
         states.Add(PlayerStateType.Die, new PlayerDieState(this));
         TransitionState(PlayerStateType.Idle);
-        
     }
 
-    
-    public void TransitionState(PlayerStateType type) 
+    private void OnEnable()
     {
-        if (currentState != null) 
-        {
-            currentState.OnExit();
-        }
-        currentState = states[type];
-        currentState.OnEnter();
+        PlayerRuntimeRegistry.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        PlayerRuntimeRegistry.Unregister(this);
     }
 
     private void Update()
@@ -81,72 +68,113 @@ public class Player : MonoBehaviour
         curMaxHealth = PlayerData.getInstance().CurrentMaxHealth;
         curHealth = PlayerData.getInstance().CurrentHealth;
         curSpeed = PlayerData.getInstance().CurrentSpeed;
-
     }
+
     private void FixedUpdate()
     {
         currentState.OnFixUpData();
     }
-    #region Input
-    public void OnMove(InputAction.CallbackContext ctx)
+
+    public void TransitionState(PlayerStateType type)
     {
-        InputValue = ctx.ReadValue<Vector2>();
-        
+        currentState?.OnExit();
+        currentState = states[type];
+        currentState.OnEnter();
     }
 
-    #endregion
+    public Animator GetAni()
+    {
+        return ani;
+    }
+
+    public void OnMove(InputAction.CallbackContext ctx)
+    {
+        inputValue = ctx.ReadValue<Vector2>();
+    }
 
     public void Move()
     {
-        if (InputValue.magnitude > 0.0001f) 
-            isRuning = true;    
-        else
-            isRuning = false;
-        ani.SetFloat("LookX",InputValue.x);
-        ani.SetFloat("LookY",InputValue.y);
-        rig.velocity = InputValue * PlayerData.getInstance().CurrentSpeed;
-        
+        isRuning = inputValue.magnitude > 0.0001f;
+        ani.SetFloat("LookX", inputValue.x);
+        ani.SetFloat("LookY", inputValue.y);
+        rig.velocity = inputValue * PlayerData.getInstance().CurrentSpeed;
     }
-    public void PickUpAllItem() 
+
+    public void PickUpAllItem()
     {
-        for (int i = 0; i < pickUpSet.transform.childCount; i++) 
+        for (int i = 0; i < pickUpSet.transform.childCount; i++)
         {
             if (pickUpSet.transform.GetChild(i).gameObject.activeSelf)
             {
-                pickUpSet.transform.GetChild(i).GetComponent<PickUp>().pickUpDistance = 1000000;
-                pickUpSet.transform.GetChild(i).GetComponent<PickUp>().moveSpeed *= 4;
+                PickUp pickUp = pickUpSet.transform.GetChild(i).GetComponent<PickUp>();
+                pickUp.pickUpDistance = 1000000;
+                pickUp.moveSpeed *= 4;
             }
-        }  
+        }
     }
-    public void GetDamage(float damage) 
+
+    public void GetDamage(float damage)
     {
-        // 玩家受伤先走 Lua 伤害公式，例如护盾、减伤、难度修正等。
-        // Lua 返回失败时继续使用 C# 传入的原始 damage。
-        if (LuaConfig.TryCallFloat("hotfix.player.player_rule", "AdjustDamage", this, damage, out float luaDamage))
+        // 兼容旧入口：外部仍可调用 player.GetDamage(value)。
+        // 实际伤害计算、Lua 修正和扣血流程都统一交给 DamageSystem。
+        DamageSystem.ApplyToPlayer(new DamageContext
         {
-            damage = luaDamage;
+            attacker = null,
+            target = gameObject,
+            hitPoint = transform.position,
+            baseDamage = damage,
+            bonusDamage = 0f,
+            multiplier = 1f,
+            targetType = DamageTargetType.Player,
+            sourceType = DamageSourceType.Debug,
+            showDamageNumber = false,
+            ignoreDefense = false,
+            instantKill = false
+        });
+    }
+
+    public DamageResult ApplyDamageFromSystem(float finalDamage)
+    {
+        // 只有 DamageSystem 应该调用这个方法。
+        // Player 自己只负责扣血和触发受伤/死亡事件，不再负责伤害公式。
+        if (finalDamage <= 0f)
+        {
+            return new DamageResult
+            {
+                finalDamage = finalDamage,
+                applied = false,
+                killed = PlayerData.getInstance().CurrentHealth <= 0f
+            };
         }
 
-        if (damage <= 0)
-            return;
-        PlayerData.getInstance().TakeDamage(damage);
+        PlayerData.getInstance().TakeDamage(finalDamage);
         onHurt?.Invoke();
-        if (PlayerData.getInstance().CurrentHealth <= 0) 
+        if (PlayerData.getInstance().CurrentHealth <= 0f)
         {
             onDie?.Invoke();
-        }  
+        }
+
+        return new DamageResult
+        {
+            finalDamage = finalDamage,
+            applied = true,
+            killed = PlayerData.getInstance().CurrentHealth <= 0f
+        };
     }
-    public void PlayerHurt() 
+
+    public void PlayerHurt()
     {
         isHurt = true;
         Controller.instance.StartVibration(1f, 1f, 0.5f);
         FlashColor(0.5f);
     }
+
     private void FlashColor(float time)
     {
         sr.material.color = Color.red;
-        Invoke("ResetColor", time);
+        Invoke(nameof(ResetColor), time);
     }
+
     private void ResetColor()
     {
         sr.material.color = originColor;

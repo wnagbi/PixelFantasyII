@@ -16,17 +16,21 @@ public class MapGenerator : MonoBehaviour
 
     // 记录上一次玩家所在格子，只有跨格移动时才重新生成/删除 Tile。
     private Vector3 lastPlayerPos;
+    private bool initialized;
+    private bool missingPlayerWarningShown;
 
     private void Start()
     {
         // 单机玩家存在时优先绑定单机 Player。
-        if(FindAnyObjectByType<Player>() != null)  // Avoid error
-            player = FindAnyObjectByType<Player>().transform;                    
-        GenerateTiles();
-        lastPlayerPos = tileMap.WorldToCell(player.position);
+        TryInitialize();
     }
     private void Update()
     {
+        if (!initialized && !TryInitialize())
+        {
+            return;
+        }
+
         Vector3 currentPlayerCell = tileMap.WorldToCell(player.position);
         if (currentPlayerCell != lastPlayerPos) // Check whether player movew
         {
@@ -36,6 +40,30 @@ public class MapGenerator : MonoBehaviour
             lastPlayerPos = currentPlayerCell;
 
         }
+    }
+
+    private bool TryInitialize()
+    {
+        if (tileMap == null)
+        {
+            return false;
+        }
+
+        if (player == null && !PlayerRuntimeRegistry.TryGetPlayerTransform(out player))
+        {
+            if (!missingPlayerWarningShown)
+            {
+                Debug.LogWarning("[MapGenerator] Player is not registered yet. Tile generation will wait.", this);
+                missingPlayerWarningShown = true;
+            }
+
+            return false;
+        }
+
+        GenerateTiles();
+        lastPlayerPos = tileMap.WorldToCell(player.position);
+        initialized = true;
+        return true;
     }
     private void GenerateTiles() // Generate Tiles
     {
