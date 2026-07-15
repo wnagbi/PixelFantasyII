@@ -174,7 +174,7 @@ public static class DamageSystem
     private static float CalculateBaseDamage(DamageContext context)
     {
         // 防止外部没有设置 multiplier 导致所有伤害被乘成 0。
-        float multiplier = Mathf.Approximately(context.multiplier, 0f) ? 1f : context.multiplier;
+        float multiplier = 1f;
         return (context.baseDamage + context.bonusDamage) * multiplier;
     }
 

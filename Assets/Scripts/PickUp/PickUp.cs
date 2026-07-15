@@ -10,6 +10,9 @@ public enum PickUpTpye
 // 负责吸附玩家、碰撞拾取、增加经验或回复生命，并支持 Lua 配置拾取距离/速度/数值。
 public class PickUp : MonoBehaviour
 {
+    public const int MaxActiveBloodPickups = 5;
+    public static int ActiveBloodPickups { get; private set; }
+
     public AudioClip a;
     public PickUpTpye pickUpTpye;
     public float value;
@@ -22,6 +25,7 @@ public class PickUp : MonoBehaviour
     private float originSpeed;
     public Transform player;
     private bool missingPlayerWarningShown;
+    private bool countedAsActiveBlood;
     private void Awake()
     {
         originDistance = pickUpDistance;
@@ -29,6 +33,12 @@ public class PickUp : MonoBehaviour
     }
     private void OnEnable()
     {
+        if (pickUpTpye == PickUpTpye.Blood && !countedAsActiveBlood)
+        {
+            ActiveBloodPickups++;
+            countedAsActiveBlood = true;
+        }
+
         pickUpDistance = originDistance;
         moveSpeed = originSpeed;
         if (pickUpTpye == PickUpTpye.Exp) 
@@ -44,6 +54,21 @@ public class PickUp : MonoBehaviour
         pickUpDistance = luaDistance;
         moveSpeed = luaSpeed;
     }
+
+    private void OnDisable()
+    {
+        if (countedAsActiveBlood)
+        {
+            ActiveBloodPickups = Mathf.Max(0, ActiveBloodPickups - 1);
+            countedAsActiveBlood = false;
+        }
+    }
+
+    public static bool CanSpawnBloodPickup()
+    {
+        return ActiveBloodPickups < MaxActiveBloodPickups;
+    }
+
     private void Start()
     {
         TryBindPlayer();
