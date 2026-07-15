@@ -186,7 +186,7 @@ public class Enemy : MonoBehaviour
         // Lua 未接管时的 C# 回退：击杀数交给 RunData，再由事件通知 HUD 和任务系统。
         RunData.AddKill();
         pickUpGenerator.DropItems();
-        isDie = false;
+        isDie = true;
         ObjPoolManager.instance.ReturnObj(gameObject);
     }
     public void UseDefaultStates()

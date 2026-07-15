@@ -1,118 +1,158 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine.InputSystem;
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Events;
+using UnityEngine.InputSystem;
+
+public enum PlayerInputDeviceType
+{
+    KeyboardMouse,
+    Gamepad
+}
 
 // 输入设备与 UI 导航控制器。
-// 负责判断当前使用键盘鼠标还是手柄，并根据设备切换鼠标显示/锁定和默认 UI 选中项。
+// 负责记录当前使用键鼠还是手柄，并根据设备切换鼠标显示/锁定和默认 UI 选中项。
 public class InputController : MonoBehaviour
 {
     public static InputController instance;
+    public static PlayerInputDeviceType CurrentDeviceType { get; private set; } = PlayerInputDeviceType.KeyboardMouse;
+    public static event Action<PlayerInputDeviceType> DeviceChanged;
+
     // 当前面板打开后希望手柄默认选中的 UI。
     public GameObject firstSelectedUI;
+
     private EventSystem eventSystem;
     private InputDevice currentDevice;
-    private InputDevice lastDevice;
-    private GameObject lastSelect;
+
     private void Awake()
     {
         // 缓存 EventSystem，后面频繁切换 UI 选中项时使用。
         instance = this;
         eventSystem = EventSystem.current;
-
+        currentDevice = GetDeviceFromType(CurrentDeviceType);
+        ApplyDeviceMode(CurrentDeviceType);
     }
+
     private void Update()
     {
-        // 每帧检测当前活跃输入设备，并根据设备更新 UI 模式。
+        // 每帧只检测“是否出现新的有效输入”；没有输入时保留上一次设备状态。
         DetectInputDevice();
         KeyboardUI();
-        //HandleUIInteraction();
     }
-    void DetectInputDevice()
+
+    public InputDevice GetCurrentDevice()
     {
-        // 如果当前活跃设备变化，就执行一次切换处理。
-        InputDevice newDevice = GetActiveInputDevice();
-
-        if (newDevice != lastDevice) 
-        {
-            //Debug.Log("切换");
-            lastDevice =currentDevice;
-            currentDevice = newDevice;
-            HandleSwitchDevice();
-        }
+        // 返回上一次有效输入设备，而不是这一帧是否有输入。
+        return currentDevice;
     }
 
-    public InputDevice GetActiveInputDevice() 
+    public InputDevice GetActiveInputDevice()
     {
         // 手柄摇杆有输入或确认键按下时，认为当前设备是手柄。
         if (Gamepad.current != null && (Gamepad.current.leftStick.ReadValue().magnitude > 0.1f ||
-            Gamepad.current.buttonSouth.isPressed)) 
+            Gamepad.current.buttonSouth.isPressed))
         {
-            //Debug.Log("切换手柄");
             return Gamepad.current;
-
         }
+
         // 键盘任意键或鼠标移动时，认为当前设备是键鼠。
-        if (Keyboard.current.anyKey.isPressed || Mouse.current.delta.ReadValue().magnitude > 0) 
+        if ((Keyboard.current != null && Keyboard.current.anyKey.isPressed) ||
+            (Mouse.current != null && Mouse.current.delta.ReadValue().magnitude > 0))
         {
-            //Debug.Log("切换键盘");
-            SetGamepadUIState(false);
             return Keyboard.current;
         }
+
         return null;
     }
 
-    void HandleSwitchDevice() 
+    public static bool IsGamepadMode()
     {
-        // 根据设备变化决定是否进入手柄 UI 模式。
-        
-        bool isSwitchingToGamepad = currentDevice is Gamepad;
-        bool isSwitchingToKeyboard = currentDevice is Keyboard;
-        bool isSwitchingFromGamepad = lastDevice is Gamepad;
-        bool isSwitchingStay = currentDevice is null;
+        return CurrentDeviceType == PlayerInputDeviceType.Gamepad;
+    }
 
+    public static bool IsKeyboardMouseMode()
+    {
+        return CurrentDeviceType == PlayerInputDeviceType.KeyboardMouse;
+    }
 
-        if (isSwitchingStay && isSwitchingFromGamepad) 
+    private void DetectInputDevice()
+    {
+        InputDevice activeDevice = GetActiveInputDevice();
+        if (activeDevice is Gamepad)
         {
-            // 没有新输入但上一个设备是手柄时，保持当前 UI 选中，避免焦点丢失。
-            lastSelect = eventSystem.currentSelectedGameObject;
-            eventSystem.SetSelectedGameObject(lastSelect);
-            return;
+            SetCurrentDeviceType(PlayerInputDeviceType.Gamepad);
         }
-        if (isSwitchingToGamepad && eventSystem.currentSelectedGameObject == null)
+        else if (activeDevice is Keyboard)
         {
-            //Debug.Log("锁鼠标");
-            // 切到手柄时锁鼠标并选中当前面板的默认 UI。
-            SetGamepadUIState(true);
-            return;
+            SetCurrentDeviceType(PlayerInputDeviceType.KeyboardMouse);
         }
     }
-    void SetGamepadUIState(bool enableGamepadMode)
+
+    private void SetCurrentDeviceType(PlayerInputDeviceType deviceType)
     {
+        if (CurrentDeviceType == deviceType)
+        {
+            return;
+        }
+
+        CurrentDeviceType = deviceType;
+        currentDevice = GetDeviceFromType(deviceType);
+        ApplyDeviceMode(deviceType);
+        DeviceChanged?.Invoke(CurrentDeviceType);
+    }
+
+    private InputDevice GetDeviceFromType(PlayerInputDeviceType deviceType)
+    {
+        return deviceType == PlayerInputDeviceType.Gamepad ? Gamepad.current : Keyboard.current;
+    }
+
+    private void ApplyDeviceMode(PlayerInputDeviceType deviceType)
+    {
+        bool enableGamepadMode = deviceType == PlayerInputDeviceType.Gamepad;
+
         // 手柄模式隐藏并锁住鼠标；键鼠模式显示鼠标并清空 UI 选中。
         Cursor.visible = !enableGamepadMode;
         Cursor.lockState = enableGamepadMode ? CursorLockMode.Locked : CursorLockMode.None;
 
-        if (enableGamepadMode  )
+        if (eventSystem == null)
         {
-            //Debug.Log("设置初始");
-            eventSystem.SetSelectedGameObject(firstSelectedUI);
+            return;
+        }
+
+        if (enableGamepadMode)
+        {
+            if (firstSelectedUI != null && eventSystem.currentSelectedGameObject == null)
+            {
+                eventSystem.SetSelectedGameObject(firstSelectedUI);
+            }
         }
         else
         {
             eventSystem.SetSelectedGameObject(null);
         }
     }
-    void KeyboardUI()
+
+    private void KeyboardUI()
     {
-        // 键鼠模式下不强制保留 EventSystem 选中项，让鼠标悬停/点击控制 UI。
-        if (lastDevice is Keyboard || eventSystem.currentSelectedGameObject == null && firstSelectedUI != null)
+        if (eventSystem == null)
         {
-            eventSystem.SetSelectedGameObject(null);
+            return;
         }
 
-    }
+        // 键鼠模式下不强制保留 EventSystem 选中项，让鼠标悬停/点击控制 UI。
+        if (CurrentDeviceType == PlayerInputDeviceType.KeyboardMouse)
+        {
+            if (eventSystem.currentSelectedGameObject != null)
+            {
+                eventSystem.SetSelectedGameObject(null);
+            }
 
+            return;
+        }
+
+        // 手柄模式下如果当前没有选中项，尝试恢复当前面板的默认选中 UI。
+        if (firstSelectedUI != null && eventSystem.currentSelectedGameObject == null)
+        {
+            eventSystem.SetSelectedGameObject(firstSelectedUI);
+        }
+    }
 }

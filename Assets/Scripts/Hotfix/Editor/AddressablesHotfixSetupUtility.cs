@@ -103,14 +103,7 @@ public static class AddressablesHotfixSetupUtility
         Debug.Log($"[AddressablesHotfixSetup] Test URL: {TestUrl}");
     }
 
-    [MenuItem("Hotfix/Addressables/Print HTTP Remote Path")]
-    public static void PrintHttpRemotePath()
-    {
-        Debug.Log($"[AddressablesHotfixSetup] Server root: {ServerRoot}");
-        Debug.Log($"[AddressablesHotfixSetup] Remote build path: {RemoteBuildPath}");
-        Debug.Log($"[AddressablesHotfixSetup] Remote load path: {RemoteLoadPath}");
-        Debug.Log($"[AddressablesHotfixSetup] Test URL: {TestUrl}");
-    }
+ 
 
     [MenuItem("Hotfix/Addressables/Build HTTP Remote Content")]
     public static void BuildHttpRemoteContent()

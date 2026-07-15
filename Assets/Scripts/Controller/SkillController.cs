@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -56,21 +55,22 @@ public class SkillController : MonoBehaviour
     {
         // 技能购买成功后会广播 SkillUnlocked，这里负责刷新战斗技能按钮显隐。
         GameEvents.SkillUnlocked += OnSkillUnlocked;
+        InputController.DeviceChanged += RefreshInputIcons;
         RefreshSkillButtons();
+        RefreshInputIcons(InputController.CurrentDeviceType);
     }
 
     private void OnDisable()
     {
         GameEvents.SkillUnlocked -= OnSkillUnlocked;
+        InputController.DeviceChanged -= RefreshInputIcons;
     }
+
     private void Start()
     {
         Instance = this;
         StartCoroutine(LoadAddressableSkillAssets());
-    }
-    private void Update()
-    {
-        UIChange();
+        
     }
 
     private void RefreshSkillButtons()
@@ -254,24 +254,46 @@ public class SkillController : MonoBehaviour
     }
     public void UIChange() 
     {
-        bool isGamepad = InputController.instance.GetActiveInputDevice() is Gamepad;
-        bool isKey = InputController.instance.GetActiveInputDevice() is Keyboard;
-        if (isGamepad) 
-        {
-            //Debug.Log("Gamepad");
-            magnetImageButton.sprite = magnetControUi;
-            rageImageButton.sprite = rageControUi;
-            dsImageButton.sprite = dsControUi;
+        RefreshInputIcons(InputController.CurrentDeviceType);
+     }
 
-        }
-        if (isKey) 
+    private void RefreshInputIcons(PlayerInputDeviceType deviceType)
+    {
+        if (deviceType == PlayerInputDeviceType.Gamepad)
         {
-            //Debug.Log("Key");
+            if (magnetImageButton != null)
+            {
+                magnetImageButton.sprite = magnetControUi;
+            }
+
+            if (rageImageButton != null)
+            {
+                rageImageButton.sprite = rageControUi;
+            }
+
+            if (dsImageButton != null)
+            {
+                dsImageButton.sprite = dsControUi;
+            }
+
+            return;
+        }
+
+        if (magnetImageButton != null)
+        {
             magnetImageButton.sprite = magnetKeyUi;
+        }
+
+        if (rageImageButton != null)
+        {
             rageImageButton.sprite = rageKeyUi;
+        }
+
+        if (dsImageButton != null)
+        {
             dsImageButton.sprite = dsKeyUi;
         }
-     }
+    }
     public void MagnetCD(float duration)
     {
         magnetImage.fillAmount = 1;

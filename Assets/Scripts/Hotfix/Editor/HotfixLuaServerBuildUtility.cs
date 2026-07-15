@@ -64,13 +64,6 @@ public static class HotfixLuaServerBuildUtility
         Debug.Log($"[LuaHotfixBuild] Manifest URL: {LuaManifestUrl}");
     }
 
-    [MenuItem("Hotfix/Lua/Print HTTP Lua Hotfix URL")]
-    public static void PrintHttpLuaHotfixUrl()
-    {
-        // 只打印路径，不做任何文件修改，方便排查服务器和客户端地址是否一致。
-        Debug.Log($"[LuaHotfixBuild] Lua remote path: {LuaRemotePath}");
-        Debug.Log($"[LuaHotfixBuild] Manifest URL: {LuaManifestUrl}");
-    }
 
     // 创建 Lua zip。
     // 只打包实际 Lua 文件和配置文件，忽略 Unity 自动生成的 .meta。
