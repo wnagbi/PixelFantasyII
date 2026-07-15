@@ -16,11 +16,23 @@ public class SelectMapController : MonoBehaviour
         // 指定本地化表中的分数字段。
         nameString.TableEntryReference = "ScoreText";
         //PlayerData.getInstance().InitData();
+        RefreshScore(PlayerSaveStore.Current.score);
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        // 每帧刷新总分显示。后续可以优化成进入界面或分数变化时刷新。
-        scoreText.text = $"{nameString.GetLocalizedString()}" + PlayerSaveStore.Current.score.ToString();
+        // 分数变化由 PlayerSaveStore 广播，地图界面只负责刷新显示。
+        GameEvents.ScoreChanged += RefreshScore;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.ScoreChanged -= RefreshScore;
+    }
+
+    private void RefreshScore(int score)
+    {
+        // 这里不再每帧读取 JSON，只有进入界面或分数变化时刷新。
+        scoreText.text = $"{nameString.GetLocalizedString()}" + score.ToString();
     }
 }

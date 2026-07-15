@@ -1,8 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
-
 using UnityEngine;
-using UnityEngine.Rendering;
 
 // 飞剑武器控制器。
 // 生成飞剑、升级重建等规则优先由 hotfix.weapon.sword.lua 接管；寻敌移动仍保留在 C# 中执行。
@@ -13,14 +10,13 @@ public class SwordController : HotfixWeaponController
 
     public bool isRotating = true;
 
-    [SerializeField]private List<Transform> swords = new List<Transform>(); 
-    [SerializeField]private List<Transform> enemies = new List<Transform>(); 
-    
+    [SerializeField] private List<Transform> swords = new List<Transform>();
 
     protected override void Start()
     {
         base.Start();
     }
+
     protected override void Refresh()
     {
         InitializeWeapon();
@@ -28,15 +24,14 @@ public class SwordController : HotfixWeaponController
         {
             SwordGenerator();
         }
-        
-
     }
+
     protected override void Attack()
     {
         // 当前飞剑攻击逻辑是 Lua 优先；没有 Lua 时这里不会额外执行父类攻击。
         TryLuaAttack();
-
     }
+
     protected override void Update()
     {
         base.Update();
@@ -44,54 +39,77 @@ public class SwordController : HotfixWeaponController
         {
             return;
         }
-        
-        for (int i = 0; i < count; i++) 
+
+        for (int i = 0; i < count; i++)
         {
             if (i >= swords.Count || swords[i] == null)
             {
                 continue;
             }
 
-            Transform sword =swords[i];
-            Transform target = sword.GetComponent<Sword>().enemy;
-            if (target.gameObject.activeSelf == false)
+            Transform swordTransform = swords[i];
+            Sword swordComponent = swordTransform.GetComponent<Sword>();
+            if (swordComponent == null)
             {
-                AssignTarget(sword);
+                continue;
+            }
 
-            }
-            else
+            Transform target = swordComponent.enemy;
+            if (!IsValidTarget(target))
             {
-                RotationSword(sword,target);
-                MoveObject(sword, target);
+                AssignTarget(swordTransform);
+                target = swordComponent.enemy;
             }
+
+            if (!IsValidTarget(target))
+            {
+                continue;
+            }
+
+            RotationSword(swordTransform, target);
+            MoveObject(swordTransform, target);
+        }
+    }
+
+    private void AssignTarget(Transform swordTransform)
+    {
+        if (swordTransform == null)
+        {
+            return;
         }
 
+        Enemy target = EnemyManager.Instance != null ? EnemyManager.Instance.GetRandomEnemy() : null;
+        Sword swordComponent = swordTransform.GetComponent<Sword>();
+        if (swordComponent != null)
+        {
+            swordComponent.enemy = target != null ? target.transform : null;
+        }
     }
-    private void AssignTarget(Transform sword)
-    {
 
-        // Transform target = availableTargets[Random.Range(0, availableTargets.Count - 1)];
-        List<Enemy> list = EnemyManager.Instance.GetEnemiesList();
-        Transform target = list[Random.Range(0, list.Count - 1)].transform;
-        sword.GetComponent<Sword>().enemy = target;
-            
-        
+    private bool IsValidTarget(Transform target)
+    {
+        if (target == null || !target.gameObject.activeInHierarchy)
+        {
+            return false;
+        }
+
+        Enemy enemy = target.GetComponent<Enemy>();
+        return enemy != null && enemy.live && !enemy.isDie && enemy.Health > 0f;
     }
-    
-    public void MoveObject(Transform sword,Transform target)
-    {
 
-        sword.position = Vector3.MoveTowards(sword.position, target.position, speed * Time.deltaTime);
+    public void MoveObject(Transform swordTransform, Transform target)
+    {
+        swordTransform.position = Vector3.MoveTowards(swordTransform.position, target.position, speed * Time.deltaTime);
     }
-    public void RotationSword(Transform sword,Transform target)
-    {
 
-        Vector2 dir = sword.position - target.position;
+    public void RotationSword(Transform swordTransform, Transform target)
+    {
+        Vector2 dir = swordTransform.position - target.position;
         float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         Quaternion targetRotation = Quaternion.Euler(0, 0, angle + 45f);
-        sword.rotation = Quaternion.RotateTowards(sword.rotation, targetRotation, turnSpeed * Time.deltaTime);
-
+        swordTransform.rotation = Quaternion.RotateTowards(swordTransform.rotation, targetRotation, turnSpeed * Time.deltaTime);
     }
+
     public void SwordGenerator()
     {
         GameObject sourcePrefab = GetRuntimePrefab(prefab);
@@ -107,8 +125,8 @@ public class SwordController : HotfixWeaponController
         }
 
         sword = swordObj.transform;
+        AssignTarget(sword);
         swords.Add(sword);
-
     }
 
     public void RebuildSwords()
@@ -167,13 +185,17 @@ public class SwordController : HotfixWeaponController
                 weapon.weaponLevel++;
                 break;
         }
+
         for (int i = 0; i < swords.Count; i++)
         {
-            Destroy(swords[i].gameObject);
-         }
-            swords.Clear();
-        Refresh();
+            if (swords[i] != null)
+            {
+                Destroy(swords[i].gameObject);
+            }
+        }
 
+        swords.Clear();
+        Refresh();
     }
 
     protected override string GetDefaultLuaModuleName()
@@ -182,4 +204,3 @@ public class SwordController : HotfixWeaponController
         return "hotfix.weapon.sword";
     }
 }
-

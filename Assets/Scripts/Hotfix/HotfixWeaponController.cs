@@ -134,6 +134,51 @@ public class HotfixWeaponController : WeaponController
         return SpawnAddressableOrFallbackUnder(parent, x, y, rotationZ);
     }
 
+    public Enemy GetNearestEnemy()
+    {
+        // 暴露给 Lua：获取离当前武器最近的有效敌人。
+        if (EnemyManager.Instance == null)
+        {
+            return null;
+        }
+
+        return EnemyManager.Instance.GetNearestEnemy(transform.position);
+    }
+
+    public Enemy GetNearestEnemyInRange(float range)
+    {
+        // 暴露给 Lua：获取范围内最近的有效敌人。
+        if (EnemyManager.Instance == null)
+        {
+            return null;
+        }
+
+        return EnemyManager.Instance.GetNearestEnemyInRange(transform.position, range);
+    }
+
+    public Enemy GetRandomEnemy()
+    {
+        // 暴露给 Lua：获取一个随机有效敌人。
+        if (EnemyManager.Instance == null)
+        {
+            return null;
+        }
+
+        return EnemyManager.Instance.GetRandomEnemy();
+    }
+
+    public Transform GetNearestEnemyTransform()
+    {
+        Enemy enemy = GetNearestEnemy();
+        return enemy != null ? enemy.transform : null;
+    }
+
+    public Transform GetRandomEnemyTransform()
+    {
+        Enemy enemy = GetRandomEnemy();
+        return enemy != null ? enemy.transform : null;
+    }
+
     public GameObject SpawnCustomPrefab(GameObject sourcePrefab, float x, float y, float rotationZ)
     {
         // 暴露给 Lua：不使用当前武器的 prefab，而是使用 Lua/C# 传入的其它 prefab。

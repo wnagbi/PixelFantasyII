@@ -5,7 +5,7 @@ using UnityEngine.Localization;
 using UnityEngine.UI;
 
 // 结算界面控制器。
-// 从 PlayerPrefs 读取本局时间和击杀数，本局得分累加到 save_data.json。
+// 从 RunData 读取本局时间和击杀数，本局得分累加到 save_data.json。
 public class GameOverController : MonoBehaviour
 {
     public int scoreX;
@@ -19,13 +19,14 @@ public class GameOverController : MonoBehaviour
 
     private void Awake()
     {
-        // 读取 TimeController 保存的本局生存时间，并格式化成 mm:ss。
-        float time = PlayerPrefs.GetFloat("Time");
+        // 本局时间只存在运行时，不作为长期存档保存。
+        float time = RunData.RunTime;
         string minutes = ((int)time / 60).ToString("00");
         string seconds = (time % 60).ToString("00");
         suriveTime.text = $"{survivalString.GetLocalizedString()}" + minutes + " : " + seconds;
 
-        int killNum = PlayerPrefs.GetInt("KillNum");
+        // 击杀数由 Enemy -> RunData.AddKill() 统一累加。
+        int killNum = RunData.KillCount;
         int runScore = killNum * scoreX;
 
         // 显示本局得分。

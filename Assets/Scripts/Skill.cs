@@ -44,6 +44,17 @@ public class Skill : MonoBehaviour
         isAlreadyBuy = PlayerSaveStore.IsSkillUnlocked(ID);
         RefreshIconState();
     }
+
+    private void OnEnable()
+    {
+        // 其他入口也可能解锁技能，所以商店项通过事件同步自己的锁定状态。
+        GameEvents.SkillUnlocked += OnSkillUnlocked;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.SkillUnlocked -= OnSkillUnlocked;
+    }
     
     private void Update()
     {
@@ -81,11 +92,25 @@ public class Skill : MonoBehaviour
             return;
         }
 
+        // 已购买显示正常图标，未购买显示锁定图标。
         image.sprite = isAlreadyBuy ? originImage : lockImage;
+    }
+
+    private void OnSkillUnlocked(int skillId)
+    {
+        // 只处理属于当前技能项的解锁事件。
+        if (skillId != ID)
+        {
+            return;
+        }
+
+        isAlreadyBuy = true;
+        RefreshIconState();
     }
 
     private IEnumerator LoadAddressableIcon()
     {
+        // 图标 key 从 Lua 配置读取；加载失败时继续使用 Inspector 里拖好的图。
         string iconKey = GetSkillResourceKey(ID, "iconKey", string.Empty);
         if (string.IsNullOrWhiteSpace(iconKey))
         {
@@ -106,6 +131,7 @@ public class Skill : MonoBehaviour
 
     private string GetSkillResourceKey(int skillId, string keyName, string fallback)
     {
+        // Lua 表结构来自 config.skill_config：skills[skillId].iconKey / effectKey。
         if (!LuaConfig.TryGetTable(SkillConfigModule, "skills", out XLua.LuaTable skills))
         {
             return fallback;

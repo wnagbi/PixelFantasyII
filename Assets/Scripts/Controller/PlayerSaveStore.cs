@@ -12,8 +12,10 @@ public class PlayerSaveData
     public List<int> unlockedSkills = new List<int>();
 }
 
-// 玩家长期进度存档服务。
-// 当前只保存 Score 和技能解锁状态，不保存当前局血量、经验、KillNum 等运行时数据。
+/// <summary>
+/// 玩家长期进度存档服务。
+/// 当前只保存总分和技能解锁，不保存本局血量、经验、击杀数等运行时数据。
+/// </summary>
 public static class PlayerSaveStore
 {
     private const string SaveFileName = "save_data.json";
@@ -28,6 +30,7 @@ public static class PlayerSaveStore
     {
         get
         {
+            // 延迟加载：第一次访问 Current 时再读取 JSON，避免启动顺序依赖。
             if (current == null)
             {
                 Load();
@@ -43,6 +46,7 @@ public static class PlayerSaveStore
         {
             if (!File.Exists(FilePath))
             {
+                // 没有存档时直接创建默认文件，不从旧 PlayerPrefs 迁移。
                 ResetToDefault();
                 return;
             }
@@ -58,6 +62,7 @@ public static class PlayerSaveStore
 
             if (Normalize())
             {
+                // 旧文件缺字段或数据异常时，修正后写回磁盘。
                 Save();
             }
         }
@@ -117,6 +122,9 @@ public static class PlayerSaveStore
 
         Current.score -= amount;
         Save();
+
+        // 存档变化后通知地图界面、商店等 UI 刷新。
+        GameEvents.RaiseScoreChanged(Current.score);
         return true;
     }
 
@@ -129,6 +137,9 @@ public static class PlayerSaveStore
 
         Current.score += amount;
         Save();
+
+        // 结算加分后广播，已经打开的分数 UI 可以立即刷新。
+        GameEvents.RaiseScoreChanged(Current.score);
     }
 
     public static void UnlockSkill(int skillId)
@@ -140,6 +151,9 @@ public static class PlayerSaveStore
 
         Current.unlockedSkills.Add(skillId);
         Save();
+
+        // 技能解锁成功后通知商店图标和战斗技能按钮刷新。
+        GameEvents.RaiseSkillUnlocked(skillId);
     }
 
     private static PlayerSaveData CreateDefault()
@@ -154,6 +168,7 @@ public static class PlayerSaveStore
 
     private static bool Normalize()
     {
+        // 对外部手动改 JSON、缺字段、重复技能 ID 做一次宽容修正。
         bool changed = false;
 
         if (current.version <= 0)

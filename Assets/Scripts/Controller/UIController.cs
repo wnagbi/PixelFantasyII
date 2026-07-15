@@ -1,74 +1,75 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Net.NetworkInformation;
-using Unity.VisualScripting;
+using DG.Tweening;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.Localization;
 using UnityEngine.UI;
-using DG.Tweening;
 
-// 游戏内 HUD 控制器。
-// 负责经验条、血量条、暂停面板、击杀数文本等战斗 UI。
+/// <summary>
+/// 战斗 HUD 控制器。
+/// 只负责显示血量、经验、击杀数和暂停面板，不再每帧主动轮询数据。
+/// </summary>
 public class UIController : MonoBehaviour
 {
     [Header("Exp")]
     public Slider expSlider;
     public Text expText;
+
     [Header("Hp")]
     public Image hpMaskimage;
-    private float originalSize;
+
     [Header("Esc Panel")]
     public GameObject escPanel;
+
     [Header("Kill Number")]
     public Text killNumber;
 
     public LocalizedString nameString;
 
-
+    private float originalSize;
     private Tween hpTween;
-    private bool isEsc;
+
     private void Awake()
-    {       
-        // 记录血条遮罩原始宽度，之后按血量比例缩放宽度。
+    {
+        // 记录血条遮罩的初始宽度，后续按血量百分比缩放宽度。
         originalSize = hpMaskimage.rectTransform.rect.width;
         nameString.TableEntryReference = "KillNumText";
     }
+
     private void OnEnable()
     {
-        // 订阅 PlayerData 血量变化事件。只有通过 AddHealth/TakeDamage/SetHealth 改血才会自动刷新 UI。
-        PlayerData.getInstance().OnHealthChanged += UpdateHealthUI;
-    }
-    private void OnDisable()
-    {
-        // 取消订阅，避免对象销毁后事件还调用旧 UI。
-        PlayerData.getInstance().OnHealthChanged -= UpdateHealthUI;
-    }
-    public void OnEsc()
-    {
-        // 切换暂停面板显示，同时暂停/恢复游戏时间。
-        escPanel.SetActive(!escPanel.activeSelf);
-        if (escPanel.activeSelf)
-        {
-            Time.timeScale = 0f;
-        }
-        else 
-        {
-            Time.timeScale = 1f;
-        }
-    }
-    private void Update()
-    {
-        setKillNumber();
+        // 事件驱动刷新：数据变化时才更新 UI。
+        GameEvents.HealthChanged += UpdateHealthUI;
+        GameEvents.ExpChanged += UpdateExp;
+        GameEvents.KillCountChanged += UpdateKillNumber;
+
+        // UI 刚启用时主动刷新一次，避免等下一次事件前显示旧内容。
+        PlayerData data = PlayerData.getInstance();
+        UpdateHealthUI(data.CurrentHealth, data.CurrentMaxHealth);
+        UpdateKillNumber(RunData.KillCount);
     }
 
-    public void UpdateExp(int currtExp,int levelExp,int currtLevel)
+    private void OnDisable()
     {
-        // 刷新经验条和等级文本。
-        expSlider.maxValue = levelExp;
-        expSlider.value = currtExp;      
-        expText.text = "Level: "+ currtLevel.ToString();
+        // 取消订阅，避免场景切换或对象禁用后事件继续访问旧 UI。
+        GameEvents.HealthChanged -= UpdateHealthUI;
+        GameEvents.ExpChanged -= UpdateExp;
+        GameEvents.KillCountChanged -= UpdateKillNumber;
+        hpTween?.Kill();
     }
+
+    public void OnEsc()
+    {
+        escPanel.SetActive(!escPanel.activeSelf);
+        Time.timeScale = escPanel.activeSelf ? 0f : 1f;
+    }
+
+    public void UpdateExp(int currentExp, int levelExp, int currentLevel)
+    {
+        // ExpController 只负责计算经验变化，这里只负责显示。
+        expSlider.maxValue = Mathf.Max(1, levelExp);
+        expSlider.value = Mathf.Clamp(currentExp, 0, levelExp);
+        expText.text = "Level: " + currentLevel.ToString();
+    }
+
     public void SetHPValue(float fillPercent)
     {
         fillPercent = Mathf.Clamp01(fillPercent);
@@ -76,39 +77,39 @@ public class UIController : MonoBehaviour
         RectTransform rect = hpMaskimage.rectTransform;
         float targetWidth = fillPercent * originalSize;
 
+        // 新血量动画开始前停止旧动画，避免连续受伤/回血时多个 Tween 抢同一个宽度。
         hpTween?.Kill();
 
         float currentWidth = rect.rect.width;
-
         hpTween = DOTween.To(
             () => currentWidth,
             value =>
             {
-                rect.SetSizeWithCurrentAnchors(
-                    RectTransform.Axis.Horizontal,
-                    value
-                );
+                rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, value);
             },
             targetWidth,
             0.15f
         ).SetEase(Ease.OutQuad);
-        // 通过改变遮罩宽度实现血条填充效果。
-        // hpMaskimage.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, fillPercent * originalSize);
-    }
-    private void UpdateHealthUI(float current, float max)
-    {
-        // PlayerData 血量变化事件回调。
-        SetHPValue(current / max);
     }
 
-    public void setKillNumber() 
+    private void UpdateHealthUI(float current, float max)
     {
-        // 从 PlayerPrefs 读取击杀数并刷新本地化文本。
-        killNumber.text = $"{nameString.GetLocalizedString()}" + PlayerPrefs.GetInt("KillNum").ToString();
+        SetHPValue(max <= 0f ? 0f : current / max);
     }
-    public void QuitGame() 
+
+    private void UpdateKillNumber(int killCount)
     {
-        // 打包后退出游戏。
+        killNumber.text = $"{nameString.GetLocalizedString()}" + killCount.ToString();
+    }
+
+    public void setKillNumber()
+    {
+        // 保留旧公开方法，兼容可能存在的 Inspector 按钮或旧脚本调用。
+        UpdateKillNumber(RunData.KillCount);
+    }
+
+    public void QuitGame()
+    {
         Application.Quit();
     }
 }

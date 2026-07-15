@@ -61,12 +61,20 @@ public class PlayerData : SingleBaseManager<PlayerData>
     // MaxHealth, CurrentHealth, CurrentAttack, CurrentDefense, CurrentSpeed,
     // X_pos, Y_pos
 
+    // 旧血量事件保留用于兼容；新代码优先订阅 GameEvents.HealthChanged。
     public event Action<float,float> OnHealthChanged;
 
     private void SetHealth(float value)
     {
+        // 统一走 CurrentHealth 属性，保证扣血/回血都会触发血量事件。
         CurrentHealth = value;
-        OnHealthChanged?.Invoke(currentHealth,CurrentMaxHealth);
+    }
+
+    private void NotifyHealthChanged()
+    {
+        // 同时触发旧事件和全局事件，避免旧 UI 失效，也让新事件系统能工作。
+        OnHealthChanged?.Invoke(currentHealth, CurrentMaxHealth);
+        GameEvents.RaiseHealthChanged(currentHealth, CurrentMaxHealth);
     }
 
     public void AddHealth(float value)
@@ -135,12 +143,19 @@ public class PlayerData : SingleBaseManager<PlayerData>
         get { return level; }
         set
         {
+            int oldLevel = level;
             if (value < 0)
                 level = 0;
             else if (value > MAX_LEVEL)
                 level = MAX_LEVEL;
             else
                 level = value;
+
+            if (oldLevel != level)
+            {
+                // 等级变化只发事件，不在这里直接操作 UI。
+                GameEvents.RaiseLevelChanged(level);
+            }
         }
     }
 
@@ -188,12 +203,23 @@ public class PlayerData : SingleBaseManager<PlayerData>
         get { return currentMaxHealth; }
         set 
         {
+            float oldMaxHealth = currentMaxHealth;
             if (value < 0)
                 currentMaxHealth = 0;
             else if(value > MAX_HEALTH)
                 currentMaxHealth = MAX_HEALTH;
             else
                 currentMaxHealth = value; 
+
+            if (!Mathf.Approximately(oldMaxHealth, currentMaxHealth))
+            {
+                // 最大血量下降时，当前血量不能超过新的最大值。
+                if (currentHealth > currentMaxHealth)
+                {
+                    currentHealth = currentMaxHealth;
+                }
+                NotifyHealthChanged();
+            }
         }
     }
 
@@ -202,12 +228,19 @@ public class PlayerData : SingleBaseManager<PlayerData>
         get { return currentHealth; }
         set
         {
+            float oldHealth = currentHealth;
             if (value < 0)
                 currentHealth = 0;
             else if (value > currentMaxHealth)
                 currentHealth = currentMaxHealth;
             else
                 currentHealth = value;
+
+            if (!Mathf.Approximately(oldHealth, currentHealth))
+            {
+                // 血量真的变化时才通知，避免重复刷新血条动画。
+                NotifyHealthChanged();
+            }
         }
     }
 
@@ -278,6 +311,8 @@ public class PlayerData : SingleBaseManager<PlayerData>
         currentMaxHealth = baseMaxHealth + level * healthGrowth;
         currentSpeed = baseSpeed + level * speedGrowth;
         currentDefense = baseDefense + level * defenseGrowth;
+        // 最大血量变化后主动刷新血条比例。
+        NotifyHealthChanged();
     }
 
     /// <summary>
@@ -288,7 +323,9 @@ public class PlayerData : SingleBaseManager<PlayerData>
     {
         PlayerPrefs.SetInt("Level", 1);
         PlayerPrefs.SetInt("Exp", 0);
-        PlayerPrefs.SetInt("KillNum", 0);
+        KillNum = 0;
+        // 本局击杀数和时间现在由 RunData 管理，不再写 PlayerPrefs。
+        RunData.Reset();
         PlayerPrefs.SetFloat("MaxHealth", baseMaxHealth);
         PlayerPrefs.SetFloat("CurrentHealth", baseMaxHealth);
         //PlayerPrefs.SetFloat("CurrentAttack", baseAttack);
@@ -306,7 +343,6 @@ public class PlayerData : SingleBaseManager<PlayerData>
         PlayerPrefs.SetInt("Crystal", Crystal);
         PlayerPrefs.SetInt("Level", level);
         PlayerPrefs.SetInt("Exp", Exp);
-        PlayerPrefs.SetInt("KillNum", KillNum);
         PlayerPrefs.SetFloat("MaxHealth", currentMaxHealth);
         PlayerPrefs.SetFloat("CurrentHealth", CurrentHealth);
         //PlayerPrefs.SetFloat("CurrentAttack", CurrentAttack);
@@ -325,7 +361,7 @@ public class PlayerData : SingleBaseManager<PlayerData>
         Crystal = PlayerPrefs.GetInt("Crystal", crystal);
         level = PlayerPrefs.GetInt("Level", level);
         Exp = PlayerPrefs.GetInt("Exp", exp);
-        KillNum = PlayerPrefs.GetInt("KillNum", killNum);
+        KillNum = RunData.KillCount;
         currentMaxHealth = PlayerPrefs.GetFloat("MaxHealth", currentMaxHealth);
         CurrentHealth = PlayerPrefs.GetFloat("CurrentHealth", currentHealth);
         //CurrentAttack = PlayerPrefs.GetFloat("CurrentAttack", currentAttack);
@@ -335,7 +371,7 @@ public class PlayerData : SingleBaseManager<PlayerData>
 
     public void SaveKillNum() 
     {
-        PlayerPrefs.SetInt("KillNum", KillNum);
+        KillNum = RunData.KillCount;
     }
     public void ChangeSkill(int ID) 
     {

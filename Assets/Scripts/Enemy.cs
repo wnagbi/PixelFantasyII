@@ -80,7 +80,10 @@ public class Enemy : MonoBehaviour
         isHurt = false;
         sr.color = originColor;
         TransitionState(EnemyStateType.Move);
-        EnemyManager.Instance.AddEnemy(this);
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.AddEnemy(this);
+        }
         //Debug.Log("生命" + Health + "是否死亡"+isDie+"是否受伤" +isHurt);
 
     }
@@ -110,7 +113,10 @@ public class Enemy : MonoBehaviour
     }
     private void OnDisable()
     {
-        EnemyManager.Instance.RemoveEnemy(this);
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.RemoveEnemy(this);
+        }
     }
     public void ChasePlayer()
     {
@@ -178,10 +184,8 @@ public class Enemy : MonoBehaviour
 
     public void DefaultEnemyDestroy()
     {
-        // Lua 未接管时的 C# 回退：记录击杀数、执行掉落、回收到对象池。
-        int kill = PlayerPrefs.GetInt("KillNum");
-        kill++;
-        PlayerPrefs.SetInt("KillNum", kill);
+        // Lua 未接管时的 C# 回退：击杀数交给 RunData，再由事件通知 HUD 和任务系统。
+        RunData.AddKill();
         pickUpGenerator.DropItems();
         isDie = false;
         ObjPoolManager.instance.ReturnObj(gameObject);

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 // 飞剑实体。
@@ -15,7 +13,7 @@ public class Sword : MonoBehaviour
         if (collision.CompareTag("Enemy")) 
         {
             // 如果命中的是当前锁定目标，按目标最大生命直接造成致命伤害。
-            if (collision.transform == enemy)
+            if (enemy != null && collision.transform == enemy)
             {
                 float damage = collision.GetComponent<Enemy>().maxHealht;
                 collision.GetComponent<Enemy>().GetDamage(damage);
@@ -35,8 +33,8 @@ public class Sword : MonoBehaviour
     private void Start()
     {
         // 生成时从 EnemyManager 当前存活敌人中随机选择一个目标。
-        List<Enemy> list = EnemyManager.Instance.GetEnemiesList();
-        enemy = list[Random.Range(0, list.Count - 1)].transform;
+        Enemy target = EnemyManager.Instance != null ? EnemyManager.Instance.GetRandomEnemy() : null;
+        enemy = target != null ? target.transform : null;
         weapon = FindObjectOfType<SwordController>();
 
     }

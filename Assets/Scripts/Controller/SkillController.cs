@@ -6,8 +6,10 @@ using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
-// 战斗内技能释放控制器。
-// C# 保留输入入口、UI 冷却、DOTween 和特效实例化；技能规则优先交给 Lua。
+/// <summary>
+/// 战斗内技能释放控制器。
+/// C# 保留输入入口、UI 冷却、DOTween 和特效实例化；技能规则优先交给 Lua。
+/// </summary>
 public class SkillController : MonoBehaviour
 {
     public static SkillController Instance;
@@ -52,19 +54,14 @@ public class SkillController : MonoBehaviour
 
     private void OnEnable()
     {
-        if (PlayerSaveStore.IsSkillUnlocked(2))
-            rage.SetActive(true);
-        else
-            rage.SetActive(false);
-        if (PlayerSaveStore.IsSkillUnlocked(1))
-            magnet.SetActive(true);
-        else
-            magnet.SetActive(false);
+        // 技能购买成功后会广播 SkillUnlocked，这里负责刷新战斗技能按钮显隐。
+        GameEvents.SkillUnlocked += OnSkillUnlocked;
+        RefreshSkillButtons();
+    }
 
-        if (PlayerSaveStore.IsSkillUnlocked(3))
-            ds.SetActive(true);
-        else
-            ds.SetActive(false);
+    private void OnDisable()
+    {
+        GameEvents.SkillUnlocked -= OnSkillUnlocked;
     }
     private void Start()
     {
@@ -74,6 +71,20 @@ public class SkillController : MonoBehaviour
     private void Update()
     {
         UIChange();
+    }
+
+    private void RefreshSkillButtons()
+    {
+        // PlayerSaveStore 是权威数据源；事件只负责通知“该重新读一次”。
+        rage.SetActive(PlayerSaveStore.IsSkillUnlocked(2));
+        magnet.SetActive(PlayerSaveStore.IsSkillUnlocked(1));
+        ds.SetActive(PlayerSaveStore.IsSkillUnlocked(3));
+    }
+
+    private void OnSkillUnlocked(int skillId)
+    {
+        // 当前只有三个技能，直接统一刷新，避免写多套按钮分支。
+        RefreshSkillButtons();
     }
     public void OnSkill1()
     {
