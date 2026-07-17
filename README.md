@@ -28,7 +28,6 @@
 - **Prefab / Sprite / VFX 热更新**  
   技能图标、技能特效、武器投射物、敌人和掉落物 Prefab 可以通过 Addressables key 加载更新，失败时回退 Inspector 原引用。
 
-
 - **事件驱动 UI 与运行时数据解耦**  
   使用 `GameEvents` 广播血量、经验、击杀数、分数、技能解锁和任务进度变化，使用 `RunData` 管理本局击杀数和生存时间，减少 UI 每帧轮询。
 
@@ -36,7 +35,7 @@
   敌人从对象池启用时注册、回收时注销，武器通过 `GetNearestEnemy`、`GetRandomEnemy` 等接口获取有效目标，避免锁定死亡或已回收敌人。
 
 - **输入设备状态管理**  
-  `InputController` 记录上一次有效输入设备，技能按钮可自动切换键鼠/手柄图标。键盘游玩时隐藏鼠标，只有真实鼠标移动或点击时才显示鼠标。
+  使用`InputController`来进行玩家输入的控制，记录上一次有效输入设备，技能按钮可自动切换键鼠/手柄图标。
 
 - **对象池优化**  
   敌人、掉落物、伤害数字等高频对象通过对象池复用，并与 EnemyManager、掉落逻辑和 Addressables Prefab 替换流程配合。
@@ -48,9 +47,7 @@
   使用 `Newtonsoft.Json` 保存设置、分数和技能解锁状态，逐步替代旧 PlayerPrefs 数据。
 
 - **多语言切换**  
-  使用 `Newtonsoft.Json` 保存设置、分数和技能解锁状态，逐步替代旧 PlayerPrefs 数据。
-
-
+  接入 `Localization`，通过语言下拉框切换 `LocalizationSettings.SelectedLocale`，并将语言选择保存到 `settings.json`，重启后自动恢复用户上次选择的语言。
 
 
 ## 热更新系统
