@@ -80,7 +80,7 @@ public class SwordController : HotfixWeaponController
         }
 
         // 第一版飞剑使用随机寻敌；如果想改成追最近目标，只需要换成 GetNearestEnemy。
-        Enemy target = EnemyManager.Instance != null ? EnemyManager.Instance.GetRandomEnemy() : null;
+        Enemy target = EnemyManager.Instance != null ? EnemyManager.Instance.GetNearestEnemy(transform.position) : null;
         Sword swordComponent = swordTransform.GetComponent<Sword>();
         if (swordComponent != null)
         {
