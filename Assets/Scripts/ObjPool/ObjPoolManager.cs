@@ -24,7 +24,7 @@ public class ObjPoolManager : MonoBehaviour
             Destroy(gameObject);
          }
     }
-    private void InitializeAllPools() //锟斤拷始锟斤拷锟斤拷锟斤拷锟?
+    private void InitializeAllPools() 
     {
         // 场景启动时预热所有对象池。
         foreach (var pool in pools) 
@@ -32,16 +32,16 @@ public class ObjPoolManager : MonoBehaviour
             pool.Initiliza();
         }
     }
-    public GameObject GetObj(string name) //锟斤拷取锟斤拷锟斤拷
+    public GameObject GetObj(string name) 
     {
         // 按 poolName 查找对象池并取出一个对象。
-        var pool = pools.Find(p => p.poolName == name);
+        ObjPool pool = pools.Find(p => p.poolName == name);
         if(pool != null)
             return pool.GetObj();
         return null;
     }
 
-    public void ReturnObj(GameObject obj) //锟斤拷锟截讹拷锟斤拷锟斤拷锟?
+    public void ReturnObj(GameObject obj) 
     {
         // 找到这个对象所属的对象池，然后交给该池回收。
         foreach (var pool in pools) 
@@ -95,58 +95,73 @@ public class ObjPoolManager : MonoBehaviour
 
     private IEnumerator PreloadConfiguredAddressablePools()
     {
-        string enemyPoolName = LuaConfig.GetString("config.stage_config", "enemy_spawn", "pool_name", "Silm");
-        string enemyPrefabKey = LuaConfig.GetString("config.stage_config", "enemy_spawn", "prefabKey", string.Empty);
-        yield return PreloadAddressablePrefab(enemyPoolName, enemyPrefabKey);
-
-        yield return PreloadDropAddressablePool("Exp");
-        yield return PreloadDropAddressablePool("Potion");
-    }
-
-    private IEnumerator PreloadDropAddressablePool(string dropConfigKey)
-    {
-        if (!TryGetDropAddressableConfig(dropConfigKey, out string poolName, out string prefabKey))
+        // 对象池 Addressables 预加载现在完全由 Lua 配置驱动。
+        // 配置位置：Assets/Lua/config/pool_config.lua
+        // 这样新增可热更对象池时，只需要新增 Lua 配置和 Addressable key，不再修改这里的 C#。
+        if (!LuaConfig.TryGetTable("config.pool_config", "addressable_pools", out XLua.LuaTable addressablePools))
         {
+            // 找不到配置时不影响游戏启动，所有对象池继续使用 Inspector 里原本拖好的 prefab。
+            Debug.LogWarning("[ObjPoolManager] config.pool_config.addressable_pools not found. Use Inspector pool prefabs.", this);
             yield break;
         }
 
-        yield return PreloadAddressablePrefab(poolName, prefabKey);
-    }
-
-    private bool TryGetDropAddressableConfig(string dropConfigKey, out string poolName, out string prefabKey)
-    {
-        poolName = dropConfigKey;
-        prefabKey = string.Empty;
-
-        if (!LuaConfig.TryGetTable("config.stage_config", "drops", out XLua.LuaTable drops))
-        {
-            return false;
-        }
-
-        XLua.LuaTable drop = null;
+        // 先把 LuaTable 转成 C# 列表，再逐个 yield 加载。
+        // 不在 ForEach 回调里直接 yield，因为 C# 的 lambda 不能作为协程步骤暂停。
+        List<PoolAddressableConfig> configs = new List<PoolAddressableConfig>();
         try
         {
-            drop = drops.Get<string, XLua.LuaTable>(dropConfigKey);
-            if (drop == null)
+            addressablePools.ForEach<int, XLua.LuaTable>((_, poolConfig) =>
             {
-                return false;
-            }
+                if (poolConfig == null)
+                {
+                    return;
+                }
 
-            string luaPoolName = drop.Get<string>("poolName");
-            string luaPrefabKey = drop.Get<string>("prefabKey");
+                try
+                {
+                    string poolName = poolConfig.Get<string>("poolName");
+                    string prefabKey = poolConfig.Get<string>("prefabKey");
 
-            poolName = string.IsNullOrWhiteSpace(luaPoolName) ? dropConfigKey : luaPoolName;
-            prefabKey = string.IsNullOrWhiteSpace(luaPrefabKey) ? string.Empty : luaPrefabKey;
-            return !string.IsNullOrWhiteSpace(prefabKey);
-        }
-        catch
-        {
-            return false;
+                    if (string.IsNullOrWhiteSpace(poolName) || string.IsNullOrWhiteSpace(prefabKey))
+                    {
+                        // 单条配置不完整时只跳过这一项，不影响其它对象池加载。
+                        Debug.LogWarning("[ObjPoolManager] Skip invalid addressable pool config.", this);
+                        return;
+                    }
+
+                    configs.Add(new PoolAddressableConfig(poolName, prefabKey));
+                }
+                finally
+                {
+                    // xLua 的 LuaTable 是托管引用，用完要释放，避免 LuaEnv Dispose 时报引用残留。
+                    poolConfig.Dispose();
+                }
+            });
         }
         finally
         {
-            drop?.Dispose();
-            drops.Dispose();
+            // 外层 table 同样需要释放。
+            addressablePools.Dispose();
+        }
+
+        foreach (PoolAddressableConfig config in configs)
+        {
+            // 加载成功会替换对象池 prefab 并 Rewarm；失败则保留 Inspector fallback prefab。
+            yield return PreloadAddressablePrefab(config.poolName, config.prefabKey);
+        }
+    }
+
+    // 临时保存一条 Lua 对象池热更配置。
+    // 使用 struct 避免为每条配置创建额外 MonoBehaviour 或 ScriptableObject。
+    private readonly struct PoolAddressableConfig
+    {
+        public readonly string poolName;
+        public readonly string prefabKey;
+
+        public PoolAddressableConfig(string poolName, string prefabKey)
+        {
+            this.poolName = poolName;
+            this.prefabKey = prefabKey;
         }
     }
 }
