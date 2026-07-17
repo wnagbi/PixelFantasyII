@@ -5,70 +5,93 @@ using System.Security.Cryptography;
 using UnityEditor;
 using UnityEngine;
 
-// 编辑器工具：把 Assets/Lua 打包成服务器可下载的 zip，并生成 lua_manifest.json。
-// 这个工具只在 Unity Editor 里使用，不会进入最终运行时代码。
+// 编辑器专用的 Lua HTTP 热更包构建工具。
+// 它会把 Assets/Lua 打成 zip，输出到本地服务器目录，并生成 lua_manifest.json。
 public static class HotfixLuaServerBuildUtility
 {
-    // Lua 源目录。这里的相对路径会原样保留到 zip 里，例如 hotfix/weapon/missile.lua。
-    private const string SourcePath = "Assets/Lua";
+    // 会被打进可下载 zip 的 Lua 源目录。
+    public const string SourcePath = "Assets/Lua";
 
-    // 本地 HTTP 服务器根目录，和 start_addressables_server.py 使用同一个根。
-    private const string ServerRoot = "D:/AddressablesServerRoot";
+    // 本地 HTTP 服务器根目录，Python 服务器会从这个目录提供静态文件。
+    public const string ServerRoot = "D:/AddressablesServerRoot";
 
-    // Lua 热更包输出目录。服务器访问时对应 http://127.0.0.1:18080/LuaRemote/。
-    private const string LuaRemotePath = ServerRoot + "/LuaRemote";
-    private const string LuaManifestName = "lua_manifest.json";
-    private const string LuaManifestUrl = "http://127.0.0.1:18080/LuaRemote/lua_manifest.json";
+    // LuaRemote 目录对应运行时访问地址 http://127.0.0.1:18080/LuaRemote/。
+    public const string LuaRemotePath = ServerRoot + "/LuaRemote";
+
+    // 客户端启动时会先下载这个 manifest，用它判断是否需要更新 Lua。
+    public const string LuaManifestName = "lua_manifest.json";
+    public const string LuaManifestUrl = "http://127.0.0.1:18080/LuaRemote/lua_manifest.json";
 
     [MenuItem("Hotfix/Lua/Build HTTP Lua Hotfix Package")]
     public static void BuildHttpLuaHotfixPackage()
     {
-        // 转成绝对路径后再打包，避免 Unity 当前工作目录变化导致路径不一致。
-        string sourceFullPath = Path.GetFullPath(SourcePath);
-        if (!Directory.Exists(sourceFullPath))
-        {
-            Debug.LogWarning($"[LuaHotfixBuild] Lua source path not found: {sourceFullPath}");
-            return;
-        }
-
-        Directory.CreateDirectory(LuaRemotePath);
-
-        // 版本号和 zip 文件名都使用当前时间生成。
-        // 后续如果接正式版本系统，可以把这里改成外部输入的版本号。
-        string version = DateTime.Now.ToString("yyyy.MM.dd.HHmmss");
-        string packageName = $"lua_hotfix_{DateTime.Now:yyyyMMdd_HHmmss}.zip";
-        string packagePath = Path.Combine(LuaRemotePath, packageName);
-
-        if (File.Exists(packagePath))
-        {
-            File.Delete(packagePath);
-        }
-
-        CreateLuaZip(sourceFullPath, packagePath);
-        byte[] zipBytes = File.ReadAllBytes(packagePath);
-
-        // manifest 是客户端判断是否下载、下载后如何校验的唯一依据。
-        LuaHotfixManifest manifest = new LuaHotfixManifest
-        {
-            version = version,
-            package = packageName,
-            sha256 = ComputeSha256(zipBytes),
-            size = zipBytes.Length,
-        };
-
-        string manifestPath = Path.Combine(LuaRemotePath, LuaManifestName);
-        File.WriteAllText(manifestPath, JsonUtility.ToJson(manifest, true));
-
-        Debug.Log($"[LuaHotfixBuild] Lua hotfix package built: {packagePath}");
-        Debug.Log($"[LuaHotfixBuild] Version: {manifest.version}");
-        Debug.Log($"[LuaHotfixBuild] Manifest URL: {LuaManifestUrl}");
+        // 菜单入口保持简单，实际逻辑放在 Try 方法中，方便构建面板复用。
+        TryBuildHttpLuaHotfixPackage();
     }
 
+    public static bool TryBuildHttpLuaHotfixPackage()
+    {
+        try
+        {
+            // 使用绝对路径，避免 Unity 进程工作目录变化影响打包。
+            string sourceFullPath = Path.GetFullPath(SourcePath);
+            if (!Directory.Exists(sourceFullPath))
+            {
+                // 源目录不存在时返回 false，让一键构建在生成错误 manifest 前停止。
+                Debug.LogWarning($"[LuaHotfixBuild] Lua source path not found: {sourceFullPath}");
+                return false;
+            }
 
-    // 创建 Lua zip。
-    // 只打包实际 Lua 文件和配置文件，忽略 Unity 自动生成的 .meta。
+            // 确保输出目录存在，这样 HTTP 服务器才能访问 zip 和 manifest。
+            Directory.CreateDirectory(LuaRemotePath);
+
+            // 第一版用时间戳作为版本号，足够用于本地热更新测试。
+            // 正式项目通常会从发布工具或版本管理系统传入版本号。
+            DateTime now = DateTime.Now;
+            string version = now.ToString("yyyy.MM.dd.HHmmss");
+            string packageName = $"lua_hotfix_{now:yyyyMMdd_HHmmss}.zip";
+            string packagePath = Path.Combine(LuaRemotePath, packageName);
+
+            if (File.Exists(packagePath))
+            {
+                // 文件名包含秒，一般不会重复；这里保留删除逻辑，让重复调用行为更确定。
+                File.Delete(packagePath);
+            }
+
+            // 先生成 zip，再读取最终文件字节，确保 size 和 sha256 对应真实落盘文件。
+            CreateLuaZip(sourceFullPath, packagePath);
+            byte[] zipBytes = File.ReadAllBytes(packagePath);
+
+            // manifest 是和运行时 LuaHotfixRemoteUpdater 的约定。
+            // 客户端会检查 version、size、sha256，然后才替换本地 LuaHotfix。
+            LuaHotfixManifest manifest = new LuaHotfixManifest
+            {
+                version = version,
+                package = packageName,
+                sha256 = ComputeSha256(zipBytes),
+                size = zipBytes.Length,
+            };
+
+            // 使用 JsonUtility，保持 manifest 格式和运行时解析方式一致。
+            string manifestPath = Path.Combine(LuaRemotePath, LuaManifestName);
+            File.WriteAllText(manifestPath, JsonUtility.ToJson(manifest, true));
+
+            Debug.Log($"[LuaHotfixBuild] Lua hotfix package built: {packagePath}");
+            Debug.Log($"[LuaHotfixBuild] Version: {manifest.version}");
+            Debug.Log($"[LuaHotfixBuild] Manifest URL: {LuaManifestUrl}");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            // 常见失败原因包括文件被占用、路径无效、权限不足等。
+            Debug.LogError($"[LuaHotfixBuild] Build failed: {ex.Message}");
+            return false;
+        }
+    }
+
     private static void CreateLuaZip(string sourceRoot, string packagePath)
     {
+        // 手动创建 zip，方便跳过 Unity .meta 文件，并保持 Lua 相对路径干净。
         using (FileStream zipStream = File.Create(packagePath))
         using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
         {
@@ -76,34 +99,34 @@ public static class HotfixLuaServerBuildUtility
             {
                 if (file.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
                 {
+                    // .meta 不能作为运行时热更内容下载。
                     continue;
                 }
 
+                // zip 根目录就是 Assets/Lua，因此 main.lua 在压缩包内路径仍然是 main.lua。
                 string relativePath = GetRelativePath(sourceRoot, file).Replace('\\', '/');
                 ZipArchiveEntry entry = archive.CreateEntry(relativePath, System.IO.Compression.CompressionLevel.Optimal);
                 using (Stream entryStream = entry.Open())
                 using (FileStream fileStream = File.OpenRead(file))
                 {
-                    // 手动流复制，避免依赖 ZipFile 扩展 API。
+                    // 使用流复制，避免额外把每个 Lua 文件单独完整读入内存。
                     fileStream.CopyTo(entryStream);
                 }
             }
         }
     }
 
-    // 计算 file 相对 sourceRoot 的路径。
-    // 没直接用 Path.GetRelativePath，是为了兼容 Unity 某些旧 API 设置。
     private static string GetRelativePath(string root, string file)
     {
+        // 使用 Uri 计算相对路径，兼容一些旧 Unity/.NET API 环境。
         Uri rootUri = new Uri(AppendDirectorySeparatorChar(root));
         Uri fileUri = new Uri(file);
         return Uri.UnescapeDataString(rootUri.MakeRelativeUri(fileUri).ToString());
     }
 
-    // Uri 计算相对路径时，目录路径必须以分隔符结尾。
-    // Path.DirectorySeparatorChar表示当前操作系统常用的目录分隔符 Windows是"\"
-    private static string AppendDirectorySeparatorChar(string path) 
+    private static string AppendDirectorySeparatorChar(string path)
     {
+        // Uri.MakeRelativeUri 要求目录路径以分隔符结尾，否则可能按文件路径处理。
         if (path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) ||
             path.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
         {
@@ -113,9 +136,9 @@ public static class HotfixLuaServerBuildUtility
         return path + Path.DirectorySeparatorChar;
     }
 
-    // 给 zip 生成 SHA256，写入 manifest 供客户端校验。
     private static string ComputeSha256(byte[] bytes)
     {
+        // 运行时更新器会重新计算这个 hash，用来拒绝损坏或被篡改的 zip 包。
         using (SHA256 sha256 = SHA256.Create())
         {
             byte[] hash = sha256.ComputeHash(bytes);

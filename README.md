@@ -4,7 +4,7 @@
 
 `Pixel Fantasy II` 是一款基于 Unity 开发的 2D 像素风动作生存类项目。玩家在关卡中通过移动、击杀敌人、拾取经验、升级武器和释放技能来推进战斗流程。
 
-本项目定位为学习与求职展示 Demo，重点展示单机核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地存档、事件驱动 UI、对象池、统一伤害系统和启动热更新流程。
+本项目定位为学习与求职展示 Demo，重点展示核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地存档、事件驱动 UI、对象池、启动热更新流程。
 
 ## 项目特色
 
@@ -13,7 +13,6 @@
 - 敌人刷怪、追踪、受伤、死亡、掉落和结算流程。
 - 技能解锁、分数存档、设置存档和本局运行数据管理。
 - Start 场景加载条展示 Lua 更新、资源检查和资源下载进度。
-- 血瓶掉落上限控制，避免局内回血道具无限堆积。
 
 ## 技术亮点
 
@@ -29,17 +28,12 @@
 - **Prefab / Sprite / VFX 热更新**  
   技能图标、技能特效、武器投射物、敌人和掉落物 Prefab 可以通过 Addressables key 加载更新，失败时回退 Inspector 原引用。
 
-- **统一伤害系统**  
-  新增 `DamageSystem`、`DamageContext` 和 `DamageResult`，武器、技能、敌人接触伤害统一进入伤害管线，再由 Lua `hotfix/combat/damage_rule.lua` 进行热更新修正。
 
 - **事件驱动 UI 与运行时数据解耦**  
   使用 `GameEvents` 广播血量、经验、击杀数、分数、技能解锁和任务进度变化，使用 `RunData` 管理本局击杀数和生存时间，减少 UI 每帧轮询。
 
 - **EnemyManager 统一寻敌服务**  
   敌人从对象池启用时注册、回收时注销，武器通过 `GetNearestEnemy`、`GetRandomEnemy` 等接口获取有效目标，避免锁定死亡或已回收敌人。
-
-- **PlayerRuntimeRegistry 运行时引用注册**  
-  当前玩家通过注册表暴露给刷怪、地图、掉落物和武器选择系统，减少运行时场景扫描和 `FindObjectOfType` 依赖。
 
 - **输入设备状态管理**  
   `InputController` 记录上一次有效输入设备，技能按钮可自动切换键鼠/手柄图标。键盘游玩时隐藏鼠标，只有真实鼠标移动或点击时才显示鼠标。
@@ -53,8 +47,11 @@
 - **JSON 本地数据存储**  
   使用 `Newtonsoft.Json` 保存设置、分数和技能解锁状态，逐步替代旧 PlayerPrefs 数据。
 
-- **热更新失败 fallback**  
-  Lua、Addressables 或服务器不可用时不会阻塞游戏启动，系统会继续使用本地旧版本或包内默认资源。
+- **多语言切换**  
+  使用 `Newtonsoft.Json` 保存设置、分数和技能解锁状态，逐步替代旧 PlayerPrefs 数据。
+
+
+
 
 ## 热更新系统
 
@@ -121,23 +118,6 @@ ProjectSettings/               Unity 项目设置
 - Unity Input System
 - Unity Localization
 
-## 启动与测试方式
-
-1. 使用 Unity `2022.3.55f1` 打开项目。
-2. 确认 Build Settings 第一场景为：
-
-```text
-Assets/Scenes/start.unity
-```
-
-3. 启动本地热更新 HTTP 服务：
-
-```powershell
-python D:\AddressablesServerRoot\start_addressables_server.py
-```
-
-4. 在 Unity 中 Play，或打包后运行客户端。
-5. 游戏启动后会先进入 `start` 加载场景，完成 Lua 与 Addressables 检查后进入 `title`。
 
 ## 本地热更新测试
 
@@ -167,10 +147,6 @@ http://127.0.0.1:18080/LuaRemote/lua_manifest.json
 - 修改 Addressable Prefab、Sprite 或 VFX 后重新 Build Addressables，不重新打包客户端，重启游戏验证资源变化。
 - 关闭服务器后启动游戏，验证 fallback 是否正常进入游戏。
 
-## 参与人员
-
-- **王正瀚**：程序开发、系统架构、热更新改造、存档系统、资源加载、玩法逻辑接入。
-- **魏涛**：美术资源。
 
 ## 备注
 
