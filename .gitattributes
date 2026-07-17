@@ -37,3 +37,10 @@
 *.dwlt text eol=lf
 *.json text eol=lf
 *.txt text eol=lf
+
+# GitHub Languages / Linguist
+# Assets/Lua 是项目真正维护的 Lua 源码，让 GitHub 语言统计识别为 Lua。
+Assets/Lua/**/*.lua text eol=lf linguist-detectable=true linguist-language=Lua
+
+# StreamingAssets/Lua 是由工具同步出来的包内基础 Lua，视为生成产物，避免重复统计。
+Assets/StreamingAssets/Lua/**/*.lua text eol=lf linguist-generated=true
