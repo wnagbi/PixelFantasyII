@@ -22,6 +22,9 @@
 - **Lua Zip 服务器热更新流程**  
   启动时请求 Lua manifest，对比版本后下载 zip，校验大小和 SHA256，再解压到 `persistentDataPath/LuaHotfix`。服务器不可用时回退本地 Lua。
 
+- **Unity Editor 热更新一键构建工具**  
+  基于 `EditorWindow` 和 `MenuItem` 编写热更新构建面板，将 Lua 同步、Lua Zip 与 manifest 生成、Addressables HTTP 配置、远端 Catalog 和 Bundle 构建整合为单步与一键流程；同时接入 `IPreprocessBuildWithReport`，在构建客户端前自动同步包内 Lua。工具支持构建失败中止、异常日志、服务器目录定位和测试 URL 输出，减少重复人工操作与发布配置错误。
+
 - **Addressables HTTP 资源热更新**  
   使用远端 Catalog 和 Bundle，通过本地 HTTP 服务模拟商业化资源热更新流程，支持 Sprite、VFX 和 Prefab 更新。
 
