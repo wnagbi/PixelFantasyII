@@ -20,21 +20,25 @@ public sealed class LuaHotfixManifest
 // 它只负责把服务器上的 Lua zip 安全落盘到 persistentDataPath/LuaHotfix。
 public static class LuaHotfixRemoteUpdater
 {
+    // Manifest 只保存版本和包元数据，Zip 文件从同一远端目录下载。
     private const string ManifestUrl = "http://127.0.0.1:18080/LuaRemote/lua_manifest.json";
     private const string RemoteRootUrl = "http://127.0.0.1:18080/LuaRemote/";
     private const int RequestTimeoutSeconds = 10;
 
+    // 下载、解压和备份使用独立目录，只有完整校验通过后才替换正式 LuaHotfix。
     private static readonly string DownloadRoot = Path.Combine(Application.persistentDataPath, "LuaHotfixDownload");
     private static readonly string StagingRoot = Path.Combine(Application.persistentDataPath, "LuaHotfixStaging");
     private static readonly string BackupRoot = Path.Combine(Application.persistentDataPath, "LuaHotfixBackup");
 
     public static IEnumerator CheckAndApply()
     {
+        // 兼容不需要加载界面进度的调用方。
         yield return CheckAndApply(null);
     }
 
     public static IEnumerator CheckAndApply(Action<float, string> onProgress)
     {
+        // 阶段一：请求远端 manifest 并验证基本字段。
         Report(onProgress, 0f, "检查脚本更新...");
         LuaLoader.EnsureHotfixRoot();
 
@@ -70,6 +74,7 @@ public static class LuaHotfixRemoteUpdater
         }
 
         LuaHotfixManifest localManifest = LoadLocalManifest();
+        // 版本号相同则继续使用本地 LuaHotfix，不重复下载。
         if (localManifest != null && string.Equals(localManifest.version, remoteManifest.version, StringComparison.Ordinal))
         {
             Debug.Log($"[LuaHotfixRemote] Lua hotfix is up to date: {remoteManifest.version}");
@@ -81,6 +86,7 @@ public static class LuaHotfixRemoteUpdater
         Report(onProgress, 0.60f, "下载脚本更新...");
 
         string packageUrl = RemoteRootUrl + remoteManifest.package;
+        // 阶段二：下载完整 Zip；第一版不做差分包。
         UnityWebRequest packageRequest = UnityWebRequest.Get(packageUrl);
         packageRequest.timeout = RequestTimeoutSeconds;
 
@@ -112,6 +118,7 @@ public static class LuaHotfixRemoteUpdater
 
         try
         {
+            // 阶段三：校验通过后解压到 staging，再安全替换正式目录。
             ApplyPackage(zipBytes, remoteManifest);
             Debug.Log($"[LuaHotfixRemote] Lua hotfix applied: {remoteManifest.version}");
             Report(onProgress, 1f, "脚本更新完成...");
@@ -125,6 +132,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static LuaHotfixManifest LoadLocalManifest()
     {
+        // version.json 和实际生效 Lua 位于同一目录，用于下次启动版本对比。
         string path = Path.Combine(LuaLoader.HotfixRoot, "version.json");
         if (!File.Exists(path))
         {
@@ -157,6 +165,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static bool IsValidManifest(LuaHotfixManifest manifest)
     {
+        // 缺少任意关键字段都不能继续下载，避免拼出非法 URL 或接受空包。
         return manifest != null
             && !string.IsNullOrWhiteSpace(manifest.version)
             && !string.IsNullOrWhiteSpace(manifest.package)
@@ -166,6 +175,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static bool VerifyPackage(byte[] zipBytes, LuaHotfixManifest manifest)
     {
+        // 先校验长度，再计算 SHA256；两项都匹配才允许解压。
         if (zipBytes == null || zipBytes.Length == 0)
         {
             Debug.LogWarning("[LuaHotfixRemote] Package is empty.");
@@ -190,6 +200,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static void ApplyPackage(byte[] zipBytes, LuaHotfixManifest manifest)
     {
+        // 每次更新先清理上次中断留下的临时目录。
         SafeDeleteDirectory(DownloadRoot);
         SafeDeleteDirectory(StagingRoot);
         Directory.CreateDirectory(DownloadRoot);
@@ -201,6 +212,7 @@ public static class LuaHotfixRemoteUpdater
 
         if (!File.Exists(Path.Combine(StagingRoot, "main.lua")))
         {
+            // main.lua 是 LuaManager 的固定入口，缺失说明包结构无效。
             throw new FileNotFoundException("main.lua not found in Lua hotfix package.");
         }
 
@@ -212,6 +224,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static void ExtractZip(string zipPath, string targetRoot)
     {
+        // 每个 Entry 都转换为绝对路径并验证仍在 staging 内，阻止 Zip Slip 路径穿越。
         string targetFullRoot = Path.GetFullPath(targetRoot);
         using (FileStream zipStream = File.OpenRead(zipPath))
         using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Read))
@@ -254,6 +267,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static void ReplaceHotfixDirectory()
     {
+        // 先备份旧版本；新目录移动失败时恢复备份，保证至少有一套可用 Lua。
         SafeDeleteDirectory(BackupRoot);
 
         bool hadOldHotfix = Directory.Exists(LuaLoader.HotfixRoot);
@@ -268,6 +282,7 @@ public static class LuaHotfixRemoteUpdater
         }
         catch
         {
+            // 替换失败但旧版本仍存在时立即回滚。
             if (hadOldHotfix && Directory.Exists(BackupRoot) && !Directory.Exists(LuaLoader.HotfixRoot))
             {
                 Directory.Move(BackupRoot, LuaLoader.HotfixRoot);
@@ -279,6 +294,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static string ComputeSha256(byte[] bytes)
     {
+        // 输出小写十六进制字符串，与 Editor 构建工具生成的 manifest 格式一致。
         using (SHA256 sha256 = SHA256.Create())
         {
             byte[] hash = sha256.ComputeHash(bytes);
@@ -288,6 +304,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static void SafeDeleteDirectory(string path)
     {
+        // 只接收本类预先计算的三个明确目录，不处理外部传入路径。
         if (Directory.Exists(path))
         {
             Directory.Delete(path, true);
@@ -296,6 +313,7 @@ public static class LuaHotfixRemoteUpdater
 
     private static void Report(Action<float, string> onProgress, float progress, string status)
     {
+        // 没有加载 UI 时 onProgress 为 null，更新流程仍可正常执行。
         onProgress?.Invoke(Mathf.Clamp01(progress), status);
     }
 }

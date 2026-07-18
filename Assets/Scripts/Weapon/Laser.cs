@@ -7,11 +7,13 @@ public class Laser : MonoBehaviour
 
     public void Init(FunnelController owner)
     {
+        // 激光由 FunnelController 生成时注入 owner，避免运行时查找控制器。
         weapon = owner;
     }
 
     private void OnEnable()
     {
+        // 每次生成后只存在短暂时间；当前激光不是对象池对象，因此到时直接销毁。
         Invoke(nameof(LaserDestory), 0.5f);
     }
 
@@ -47,6 +49,7 @@ public class Laser : MonoBehaviour
 
     public void LaserDestory()
     {
+        // 方法保持 public，兼容可能存在的动画事件调用。
         Destroy(gameObject);
     }
 }

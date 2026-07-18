@@ -16,6 +16,7 @@ public sealed class StartLoadingView : MonoBehaviour
 
     public void SetProgress(float value, string status)
     {
+        // 所有入口先限制到 0~1，Slider 和百分比文字始终保持一致。
         currentValue = Mathf.Clamp01(value);
 
         if (progressSlider != null)
@@ -36,6 +37,7 @@ public sealed class StartLoadingView : MonoBehaviour
 
     public IEnumerator SmoothTo(float target, string status)
     {
+        // 使用 unscaledDeltaTime，避免启动阶段或 timeScale 为 0 时进度条停止。
         target = Mathf.Clamp01(target);
         float start = progressSlider != null ? progressSlider.value : currentValue;
         float elapsed = 0f;

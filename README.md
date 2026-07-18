@@ -34,8 +34,8 @@
 - **事件驱动 UI 与运行时数据解耦**  
   使用 `GameEvents` 广播血量、经验、击杀数、分数、技能解锁和任务进度变化，使用 `RunData` 管理本局击杀数和生存时间，减少 UI 每帧轮询。
 
-- **EnemyManager 统一寻敌服务**  
-  敌人从对象池启用时注册、回收时注销，武器通过 `GetNearestEnemy`、`GetRandomEnemy` 等接口获取有效目标，避免锁定死亡或已回收敌人。
+- **EnemyManager 空间分区寻敌系统**
+  使用“敌人注册表 + 固定网格空间分区”统一管理寻敌。敌人从对象池启用时注册、回收时注销，空间网格在首次查询时按帧懒重建，同一帧内的多次寻敌共用查询数据。范围寻敌只扫描目标附近的网格，并使用距离平方筛选最近目标，减少大量敌人场景下的全列表遍历；同时统一过滤死亡、禁用或已经回收的敌人。武器和 Lua 规则继续通过 `GetNearestEnemy`、`GetNearestEnemyInRange`、`GetRandomEnemy` 等稳定接口获取目标。
 
 - **输入设备状态管理**  
   使用`InputController`来进行玩家输入的控制，记录上一次有效输入设备，技能按钮可自动切换键鼠/手柄图标。
@@ -88,7 +88,7 @@ Assets/
     DamageSystem.cs            统一伤害系统
     GameEvents.cs              事件中心
     RunData.cs                 当前局运行时数据
-    EnemyManager.cs            敌人注册表与统一寻敌服务
+    EnemyManager.cs            敌人注册表、网格空间分区与统一寻敌服务
     PlayerRuntimeRegistry.cs   当前玩家运行时注册表
     ObjPool/                   对象池
     Weapon/                    武器表现与控制器

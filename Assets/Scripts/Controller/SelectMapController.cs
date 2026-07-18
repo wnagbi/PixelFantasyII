@@ -10,29 +10,40 @@ public class SelectMapController : MonoBehaviour
 {
     public Text scoreText;
     public LocalizedString nameString;
+    private string scoreLabel = string.Empty;
 
-    private void Start()
+    private void Awake()
     {
         // 指定本地化表中的分数字段。
         nameString.TableEntryReference = "ScoreText";
-        //PlayerData.getInstance().InitData();
-        RefreshScore(PlayerSaveStore.Current.score);
     }
 
     private void OnEnable()
     {
         // 分数变化由 PlayerSaveStore 广播，地图界面只负责刷新显示。
         GameEvents.ScoreChanged += RefreshScore;
+        nameString.StringChanged += OnScoreLabelChanged;
+        RefreshScore(PlayerSaveStore.Current.score);
     }
 
     private void OnDisable()
     {
         GameEvents.ScoreChanged -= RefreshScore;
+        nameString.StringChanged -= OnScoreLabelChanged;
     }
 
     private void RefreshScore(int score)
     {
         // 这里不再每帧读取 JSON，只有进入界面或分数变化时刷新。
-        scoreText.text = $"{nameString.GetLocalizedString()}" + score.ToString();
+        if (scoreText != null)
+        {
+            scoreText.text = scoreLabel + score.ToString();
+        }
+    }
+
+    private void OnScoreLabelChanged(string localizedText)
+    {
+        scoreLabel = localizedText;
+        RefreshScore(PlayerSaveStore.Current.score);
     }
 }

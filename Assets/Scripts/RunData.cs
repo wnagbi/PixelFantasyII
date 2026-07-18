@@ -27,8 +27,13 @@ public static class RunData
 
     public static void SetRunTime(float time)
     {
-        // TimeController 每帧更新这里，结算界面直接读取 RunData.RunTime。
+        // 保留最新的浮点时间供结算读取，但 UI 通知只在整数秒变化时发送。
+        int previousSecond = Mathf.FloorToInt(RunTime);
         RunTime = Mathf.Max(0f, time);
-        GameEvents.RaiseRunTimeChanged(RunTime);
+        int currentSecond = Mathf.FloorToInt(RunTime);
+        if (previousSecond != currentSecond)
+        {
+            GameEvents.RaiseRunTimeChanged(RunTime);
+        }
     }
 }

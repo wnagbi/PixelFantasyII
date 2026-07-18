@@ -7,11 +7,13 @@ public class Knife : MonoBehaviour
 
     private void Start()
     {
+        // 刀实体位于 rotationPoint 子层级，通过父级缓存所属 Controller。
         weapon = transform.parent.parent.GetComponent<KnifeController>();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        // 只处理带 Enemy 标签且确实挂有 Enemy 组件的碰撞对象。
         if (!collision.CompareTag("Enemy") || weapon == null || !collision.TryGetComponent(out Enemy enemy))
         {
             return;

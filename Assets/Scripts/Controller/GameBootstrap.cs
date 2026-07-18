@@ -18,6 +18,7 @@ public sealed class GameBootstrap : MonoBehaviour
             Debug.LogWarning("[GameBootstrap] StartLoadingView is missing. Bootstrap will continue without loading UI.");
         }
 
+        // 启动顺序必须固定：先应用 Lua 文件，再初始化 LuaEnv，最后检查资源 Catalog。
         yield return SmoothTo(0.05f, "准备启动...");
 
         yield return LuaHotfixRemoteUpdater.CheckAndApply(
@@ -44,6 +45,7 @@ public sealed class GameBootstrap : MonoBehaviour
 
     private IEnumerator SmoothTo(float target, string status)
     {
+        // loadingView 缺失时跳过表现，不阻塞真正的热更新流程。
         if (loadingView == null)
         {
             yield break;
@@ -54,6 +56,7 @@ public sealed class GameBootstrap : MonoBehaviour
 
     private Action<float, string> CreateProgressCallback(float start, float end, string fallbackStatus)
     {
+        // 把子系统自己的 0~1 进度映射到启动总进度的指定区间。
         if (loadingView == null)
         {
             return null;

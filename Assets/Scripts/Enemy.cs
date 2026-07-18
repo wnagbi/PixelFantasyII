@@ -11,7 +11,8 @@ public enum EnemyStateType
     Die
 }
 
-// Main enemy runtime controller. Keeps stats, state machine, damage and pool lifecycle.
+// 敌人运行时核心组件。
+// 统一管理属性、C#/Lua 状态机、受伤死亡入口以及对象池启用/回收生命周期。
 public class Enemy : MonoBehaviour
 {
     public bool useLuaStateMachine = true;

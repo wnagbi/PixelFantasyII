@@ -5,7 +5,9 @@ using UnityEngine.InputSystem;
 
 public enum PlayerInputDeviceType
 {
+    // 键盘和鼠标共用一套 UI 提示模式。
     KeyboardMouse,
+    // 手柄模式会隐藏鼠标并恢复 EventSystem 默认选中项。
     Gamepad
 }
 
@@ -25,6 +27,7 @@ public class InputController : MonoBehaviour
 
     private void Awake()
     {
+        // static 枚举跨场景保留上一次设备类型，新场景启动时立即恢复对应 UI 模式。
         instance = this;
         eventSystem = EventSystem.current;
         currentDevice = GetDeviceFromType(CurrentDeviceType);
@@ -33,6 +36,7 @@ public class InputController : MonoBehaviour
 
     private void Update()
     {
+        // 输入设备活动状态和 EventSystem 焦点需要逐帧检测，属于必要的实时循环。
         DetectInputDevice();
         RefreshUiSelection();
     }
@@ -44,6 +48,7 @@ public class InputController : MonoBehaviour
 
     public InputDevice GetActiveInputDevice()
     {
+        // 只有本帧真的出现有效输入才返回设备；没有输入时保持上一次模式。
         if (Gamepad.current != null
             && (Gamepad.current.leftStick.ReadValue().magnitude > 0.1f
                 || Gamepad.current.buttonSouth.isPressed))
@@ -91,6 +96,7 @@ public class InputController : MonoBehaviour
 
     private void SetCurrentDeviceType(PlayerInputDeviceType deviceType)
     {
+        // 类型未变化时不重复广播，但鼠标模式仍需刷新显示/锁定状态。
         if (CurrentDeviceType == deviceType)
         {
             if (deviceType == PlayerInputDeviceType.KeyboardMouse)
@@ -141,6 +147,7 @@ public class InputController : MonoBehaviour
 
     private void RefreshUiSelection()
     {
+        // 手柄模式下如果面板切换导致选中项为空，恢复 firstSelectedUI 以便继续导航。
         if (eventSystem == null)
         {
             return;
@@ -164,6 +171,7 @@ public class InputController : MonoBehaviour
 
     private bool HasMouseInput()
     {
+        // 鼠标移动、点击或滚轮都视为切换到鼠标模式的有效输入。
         if (Mouse.current == null)
         {
             return false;

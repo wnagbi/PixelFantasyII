@@ -15,6 +15,7 @@ public class NewController : HotfixWeaponController
 
     protected override void Attack()
     {
+        // Lua 返回成功时完全接管旋转；失败则使用下方 C# fallback。
         if (TryLuaAttack())
         {
             return;
@@ -30,17 +31,20 @@ public class NewController : HotfixWeaponController
 
     public void RebuildOrbitObjects()
     {
+        // 清理旧轨道对象后按最新 count 重新生成，供 Lua 升级规则调用。
         ClearChildren(rotationPoint != null ? rotationPoint.transform : transform.GetChild(0));
         SpawnOrbitObjects();
     }
 
     protected override void OnHotfixStartReady()
     {
+        // Addressables Prefab 加载完成后再首次生成，避免旧资源先显示一帧。
         RebuildOrbitObjects();
     }
 
     private void SpawnOrbitObjects()
     {
+        // 将 count 个对象均匀放置在固定半径的圆周上。
         if (rotationPoint == null)
         {
             return;
@@ -64,6 +68,7 @@ public class NewController : HotfixWeaponController
 
     public void levelUp()
     {
+        // 升级优先交给 Lua；模块缺失或报错时保留默认数量成长。
         if (TryLuaLevelUp())
         {
             return;
@@ -103,6 +108,7 @@ public class NewController : HotfixWeaponController
 
     protected override string GetDefaultLuaModuleName()
     {
+        // Inspector 未指定模块时使用的默认 require 路径。
         return "hotfix.weapon.new_weapon";
     }
 }

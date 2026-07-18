@@ -8,12 +8,14 @@ public class Sword : MonoBehaviour
 
     private void Start()
     {
+        // 初次启用时随机分配有效敌人；Controller 会在目标失效后继续重新寻敌。
         Enemy target = EnemyManager.Instance != null ? EnemyManager.Instance.GetRandomEnemy() : null;
         enemy = target != null ? target.transform : null;
     }
 
     public void Init(SwordController owner)
     {
+        // 生成时注入 Controller，用于读取伤害等武器数值。
         weapon = owner;
     }
 

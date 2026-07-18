@@ -26,6 +26,7 @@ public class UIController : MonoBehaviour
 
     private float originalSize;
     private Tween hpTween;
+    private string killLabel = string.Empty;
 
     private void Awake()
     {
@@ -40,6 +41,7 @@ public class UIController : MonoBehaviour
         GameEvents.HealthChanged += UpdateHealthUI;
         GameEvents.ExpChanged += UpdateExp;
         GameEvents.KillCountChanged += UpdateKillNumber;
+        nameString.StringChanged += OnKillLabelChanged;
 
         // UI 刚启用时主动刷新一次，避免等下一次事件前显示旧内容。
         PlayerData data = PlayerData.getInstance();
@@ -53,6 +55,7 @@ public class UIController : MonoBehaviour
         GameEvents.HealthChanged -= UpdateHealthUI;
         GameEvents.ExpChanged -= UpdateExp;
         GameEvents.KillCountChanged -= UpdateKillNumber;
+        nameString.StringChanged -= OnKillLabelChanged;
         hpTween?.Kill();
     }
 
@@ -99,7 +102,16 @@ public class UIController : MonoBehaviour
 
     private void UpdateKillNumber(int killCount)
     {
-        killNumber.text = $"{nameString.GetLocalizedString()}" + killCount.ToString();
+        if (killNumber != null)
+        {
+            killNumber.text = killLabel + killCount.ToString();
+        }
+    }
+
+    private void OnKillLabelChanged(string localizedText)
+    {
+        killLabel = localizedText;
+        UpdateKillNumber(RunData.KillCount);
     }
 
     public void setKillNumber()

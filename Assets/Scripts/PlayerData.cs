@@ -5,13 +5,13 @@ using Unity.VisualScripting;
 using UnityEngine;
 
 /// <summary>
-/// This class is used to store the data of player. It is a singleton class.
-/// If you want to add new attributes, you can add them here. 
-/// Don't forget to add a constructor and its limits and set the maximum value, if you need:)
+/// 玩家运行时数值数据单例。
+/// 统一保存血量、经验、等级、移动速度等属性，并在关键数据变化时发送事件。
+/// 新增属性时应同时明确默认值、上下限、局内重置方式以及是否需要长期存档。
 /// </summary>
 public class PlayerData : SingleBaseManager<PlayerData>
 {
-    // The maximum value of each attribute
+    // 各项属性的安全上限，防止异常配置或 Lua 数值无限增长。
     private const int MAX_GOLD = 999999;
     private const int MAX_CRYSTAL = 999999;
     private const int MAX_LEVEL = 999;
@@ -23,31 +23,31 @@ public class PlayerData : SingleBaseManager<PlayerData>
     private const float MAX_DEFENSE = 999;
     private const float MAX_SPEED = 99;
 
-    // The attributes of player
+    // 玩家货币、等级、经验和其它基础运行时数据。
     [Header("Player Info")]
-    private int gold;   // the number of gold
-    private int crystal;    // the number of crystal(global)
-    private int level;  // the level of player
-    private int exp;    // the number of experience
-    private int killNum;    // the number of killed monsters
-    private int x_pos;  // the x position of player
-    private int y_pos;  // the y position of player
+    private int gold;       // 金币数量。
+    private int crystal;    // 全局水晶数量。
+    private int level;      // 当前等级。
+    private int exp;        // 当前等级内经验。
+    private int killNum;    // 旧版击杀数字段；当前本局击杀数以 RunData 为准。
+    private int x_pos;      // 旧版玩家 X 坐标存档字段。
+    private int y_pos;      // 旧版玩家 Y 坐标存档字段。
     private int skill1;
     private int score = 100;
     private int extraAttack;
 
     [Header("Player Base Attributes")]
-    private float baseMaxHealth = 100;    // the basic curHealth of player
+    private float baseMaxHealth = 100;    // 基础最大生命值。
     //private float baseAttack = 10;    // the basic attack of player
-    private float baseDefense = 5;    // the basic defense of player
-    private float baseSpeed = 5;    // the speed of player
+    private float baseDefense = 5;    // 基础防御。
+    private float baseSpeed = 5;      // 基础移动速度。
 
     [Header("Player Current Attributes")]
-    private float currentMaxHealth; // currentMaxHealth = baseMaxHealth + level * 10 + healthBuff;  // the maximum curHealth of player
-    private float currentHealth;    // the current curHealth of player
+    private float currentMaxHealth; // 根据基础值、等级成长和 Buff 计算出的最大生命。
+    private float currentHealth;    // 当前生命值。
     //private float currentAttack;    // currentAttack = baseAttack + level * 2 + attackBuff;  // the current attack of player
-    private float currentDefense;   // currentDefense = baseDefense + level * 1 + defenseBuff;  // the current defense of player
-    private float currentSpeed;   // currentSpeed = speed + speedBuff;  // the current speed of player
+    private float currentDefense;   // 当前防御。
+    private float currentSpeed;     // 当前移动速度。
 
 
 
@@ -63,6 +63,10 @@ public class PlayerData : SingleBaseManager<PlayerData>
 
     // 旧血量事件保留用于兼容；新代码优先订阅 GameEvents.HealthChanged。
     public event Action<float,float> OnHealthChanged;
+
+    // 经验值发生实际变化时通知经验控制器。
+    // 保留事件在 PlayerData 内，可以继续兼容 C# 和 Lua 直接修改 Exp 的现有方式。
+    public event Action<int> OnExperienceChanged;
 
     private void SetHealth(float value)
     {
@@ -130,12 +134,18 @@ public class PlayerData : SingleBaseManager<PlayerData>
         get { return exp; }
         set
         {
+            int oldExp = exp;
             if (value < 0)
                 exp = 0;
             else if (value > MAX_EXP)
                 exp = MAX_EXP;
             else
                 exp = value;
+
+            if (oldExp != exp)
+            {
+                OnExperienceChanged?.Invoke(exp);
+            }
         }
     }
     public int Level 
@@ -316,8 +326,7 @@ public class PlayerData : SingleBaseManager<PlayerData>
     }
 
     /// <summary>
-    /// This function is used to init data for a new game.
-    /// Including set all attributes to default value.
+    /// 初始化新游戏默认数据，并写入旧版 PlayerPrefs 存档字段。
     /// </summary>
     public void InitData()  // init data for a new game
     {
@@ -334,8 +343,7 @@ public class PlayerData : SingleBaseManager<PlayerData>
     }
 
     /// <summary>
-    /// This function is used to save data of player.
-    /// Save all attributes to PlayerPrefs.
+    /// 保存旧版玩家数据到 PlayerPrefs；新分数和技能存档已迁移到 PlayerSaveStore。
     /// </summary>
     public void SaveAllData()
     {
@@ -352,7 +360,7 @@ public class PlayerData : SingleBaseManager<PlayerData>
 
 
     /// <summary>
-    /// This function is used to load data of player.
+    /// 从旧版 PlayerPrefs 读取玩家属性，缺失字段时保留当前默认值。
     /// </summary>
     /// 
     public void LoadAllData()

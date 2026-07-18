@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -37,10 +38,11 @@ public class GameSettingController : MonoBehaviour
     public Slider music;
     public Slider vf;
 
-    private float timeDelta = 0.5f;
-    private float prevTime;
+    private const float FpsSampleInterval = 0.5f;
+
+    [Header("Debug")]
+    [SerializeField] private bool showDebugFps = true;
     private float fps;
-    private int frames;
     private GUIStyle style;
 
     private void Awake()
@@ -59,28 +61,44 @@ public class GameSettingController : MonoBehaviour
         InitialzieResolutionDropDown();
         statusCheck();
 
-        prevTime = Time.realtimeSinceStartup;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         style = new GUIStyle();
         style.fontSize = 30;
         style.normal.textColor = Color.white;
+        if (showDebugFps)
+        {
+            StartCoroutine(SampleFps());
+        }
+#endif
     }
 
     private void OnGUI()
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         // 简单 FPS 显示，用于测试性能。
-        GUI.Label(new Rect(0, Screen.height - 40, 200, 200), "FPS: " + fps.ToString("f2"), style);
+        if (showDebugFps && style != null)
+        {
+            GUI.Label(new Rect(0, Screen.height - 40, 200, 200), "FPS: " + fps.ToString("f2"), style);
+        }
+#endif
     }
 
-    private void Update()
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    private IEnumerator SampleFps()
     {
-        frames++;
-        if (Time.realtimeSinceStartup >= prevTime + timeDelta)
+        // 通过固定时间窗口内的 Time.frameCount 差值统计 FPS，不需要独立 Update。
+        WaitForSecondsRealtime wait = new WaitForSecondsRealtime(FpsSampleInterval);
+        while (enabled && showDebugFps)
         {
-            fps = frames / (Time.realtimeSinceStartup - prevTime);
-            prevTime = Time.realtimeSinceStartup;
-            frames = 0;
+            int startFrame = Time.frameCount;
+            float startTime = Time.realtimeSinceStartup;
+            yield return wait;
+
+            float elapsed = Time.realtimeSinceStartup - startTime;
+            fps = elapsed > 0f ? (Time.frameCount - startFrame) / elapsed : 0f;
         }
     }
+#endif
 
     public void SetResolution(int resolutionIndex)
     {

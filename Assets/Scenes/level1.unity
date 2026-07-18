@@ -11112,6 +11112,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5e4c1a00db83c454dac6aa4070d9c7e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  cellSize: 5
+  defaultNearestSearchRange: 30
+  drawDebugGrid: 1
   aliveEnemies: []
 --- !u!4 &1719621855
 Transform:

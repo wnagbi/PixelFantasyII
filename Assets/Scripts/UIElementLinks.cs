@@ -6,6 +6,7 @@ using UnityEngine;
 // 用来在 Inspector 中记录当前 UI 元素上下左右相邻的 UI 对象。
 public class UIElementLinks : MonoBehaviour
 {
+    // 四个方向引用用于自定义键盘/手柄导航；为空表示该方向没有相邻元素。
     public GameObject up;
     public GameObject down;
     public GameObject left;

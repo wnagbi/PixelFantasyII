@@ -24,15 +24,27 @@ public class WeaponSelect : MonoBehaviour
 
     public LocalizedString describleString;
     public LocalizedString nameString;
+    private int displayedLevel;
+
     private void Start()
     {
         BindWeapon();
-    }
-    private void Update()
-    {
-        // 持续刷新描述，确保升级后等级文本立即同步。
         DescribleGenerator();
     }
+
+    private void OnEnable()
+    {
+        // 本地化资源加载完成或语言变化时，只刷新对应文本。
+        nameString.StringChanged += OnNameStringChanged;
+        describleString.StringChanged += OnDescriptionStringChanged;
+    }
+
+    private void OnDisable()
+    {
+        nameString.StringChanged -= OnNameStringChanged;
+        describleString.StringChanged -= OnDescriptionStringChanged;
+    }
+
     public void DescribleGenerator() //Updata Describle of Selection Weapoin
     {
         if (weapon == null)
@@ -45,11 +57,13 @@ public class WeaponSelect : MonoBehaviour
         }
 
         // 根据武器类型和等级拼 Localization key，例如 knifeLevel2。
-        int level = weapon.weaponLevel;
+        displayedLevel = weapon.weaponLevel;
         nameString.TableEntryReference = $"{weaponType}";
-        nameBox.text = $"Lv.{level} {nameString.GetLocalizedString()}";
-        describleString.TableEntryReference = $"{weaponType}Level{level}";
-        describle.text = describleString.GetLocalizedString();
+        describleString.TableEntryReference = $"{weaponType}Level{displayedLevel}";
+
+        // 动态修改 key 后主动请求一次；结果由 StringChanged 回调写入 UI。
+        nameString.RefreshString();
+        describleString.RefreshString();
 
     }
     public void ChangeGet() //Change Weapon whether get
@@ -95,6 +109,7 @@ public class WeaponSelect : MonoBehaviour
     {
         weaponList = list;
         BindWeapon();
+        DescribleGenerator();
     }
 
     private void BindWeapon()
@@ -106,5 +121,21 @@ public class WeaponSelect : MonoBehaviour
 
         GameObject weaponObject = weaponList.weaponList[id - 1];
         weapon = weaponObject != null ? weaponObject.GetComponent<Weapon>() : null;
+    }
+
+    private void OnNameStringChanged(string localizedText)
+    {
+        if (nameBox != null)
+        {
+            nameBox.text = $"Lv.{displayedLevel} {localizedText}";
+        }
+    }
+
+    private void OnDescriptionStringChanged(string localizedText)
+    {
+        if (describle != null)
+        {
+            describle.text = localizedText;
+        }
     }
 }

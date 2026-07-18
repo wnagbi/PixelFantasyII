@@ -49,19 +49,20 @@ public class Skill : MonoBehaviour
     {
         // 其他入口也可能解锁技能，所以商店项通过事件同步自己的锁定状态。
         GameEvents.SkillUnlocked += OnSkillUnlocked;
+
+        // LocalizedString 会在首次加载和语言切换时主动回调，不需要在 Update 中轮询。
+        priceString.StringChanged += OnPriceStringChanged;
+        nameSkillString.StringChanged += OnNameStringChanged;
+        describleString.StringChanged += OnDescriptionStringChanged;
     }
 
     private void OnDisable()
     {
         GameEvents.SkillUnlocked -= OnSkillUnlocked;
-    }
-    
-    private void Update()
-    {
-        // 刷新本地化显示。后续可以优化为语言变化或打开界面时刷新。
-        priceText.text = priceString.GetLocalizedString() + price.ToString();
-        nameText.text = nameSkillString.GetLocalizedString();
-        descibleText.text = describleString.GetLocalizedString();
+
+        priceString.StringChanged -= OnPriceStringChanged;
+        nameSkillString.StringChanged -= OnNameStringChanged;
+        describleString.StringChanged -= OnDescriptionStringChanged;
     }
    
 
@@ -107,6 +108,30 @@ public class Skill : MonoBehaviour
 
         isAlreadyBuy = true;
         RefreshIconState();
+    }
+
+    private void OnPriceStringChanged(string localizedText)
+    {
+        if (priceText != null)
+        {
+            priceText.text = localizedText + price.ToString();
+        }
+    }
+
+    private void OnNameStringChanged(string localizedText)
+    {
+        if (nameText != null)
+        {
+            nameText.text = localizedText;
+        }
+    }
+
+    private void OnDescriptionStringChanged(string localizedText)
+    {
+        if (descibleText != null)
+        {
+            descibleText.text = localizedText;
+        }
     }
 
     private IEnumerator LoadAddressableIcon()

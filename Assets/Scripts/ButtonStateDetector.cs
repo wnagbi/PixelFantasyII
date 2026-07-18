@@ -1,6 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -22,18 +20,22 @@ public class ButtonStateDetector : MonoBehaviour,
 
     private Button button;
 
-    void Start()
+    private void Awake()
     {
         // 缓存 Button 并初始化当前状态。
         button = GetComponent<Button>();
-        // 初始状态
-        currentState = button.interactable ? ButtonState.Normal : ButtonState.Disabled;
+        RefreshInteractableState();
+    }
+
+    private void OnEnable()
+    {
+        RefreshInteractableState();
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
         // 鼠标进入按钮时进入高亮状态。
-        if (button.interactable) 
+        if (CanInteract())
         {
             currentState = ButtonState.Highlighted;
             playMusic.Invoke();
@@ -44,29 +46,27 @@ public class ButtonStateDetector : MonoBehaviour,
     public void OnPointerExit(PointerEventData eventData)
     {
         // 鼠标离开按钮时回到普通状态。
-        if (button.interactable)
+        if (CanInteract())
             currentState = ButtonState.Normal;
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         // 鼠标按下时进入按下状态。
-        if (button.interactable)
+        if (CanInteract())
             currentState = ButtonState.Pressed;
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         // 鼠标抬起后回到高亮状态。
-        if (button.interactable)
+        if (CanInteract())
             currentState = ButtonState.Highlighted; // 假设鼠标仍在按钮上
     }
     public void OnSelect(BaseEventData eventData)
     {
         // 手柄/键盘导航选中按钮时进入 Selected，并播放音效。
-        if (button == null)
-            return;
-        if (button.interactable)
+        if (CanInteract())
         {
             currentState = ButtonState.Selected;
             playMusic.Invoke();
@@ -76,18 +76,57 @@ public class ButtonStateDetector : MonoBehaviour,
     public void OnDeselect(BaseEventData eventData)
     {
         // 失去 UI 选中焦点时回到普通状态。
-        if (button == null)
-            return;
-        if (button.interactable)
+        if (CanInteract())
             currentState = ButtonState.Normal;
-        
     }
-    void Update()
+
+    public void SetInteractable(bool interactable)
     {
-        // 如果按钮被禁用，同步记录 Disabled 状态。
-        // 处理禁用状态
+        if (button == null)
+        {
+            button = GetComponent<Button>();
+        }
+
+        if (button == null)
+        {
+            return;
+        }
+
+        button.interactable = interactable;
+        RefreshInteractableState();
+    }
+
+    public void RefreshInteractableState()
+    {
+        if (button == null)
+        {
+            button = GetComponent<Button>();
+        }
+
+        if (button == null)
+        {
+            return;
+        }
+
         if (!button.interactable)
+        {
             currentState = ButtonState.Disabled;
+        }
+        else if (currentState == ButtonState.Disabled)
+        {
+            currentState = ButtonState.Normal;
+        }
+    }
+
+    private bool CanInteract()
+    {
+        if (button == null || !button.interactable)
+        {
+            currentState = ButtonState.Disabled;
+            return false;
+        }
+
+        return true;
     }
 }
 

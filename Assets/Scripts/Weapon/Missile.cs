@@ -14,6 +14,7 @@ public class Missile : MonoBehaviour
 
     private void Start()
     {
+        // 缓存落点动画、导弹动画和命中碰撞体。
         ani = GetComponent<Animator>();
         missileAni = missile != null ? missile.GetComponent<Animator>() : null;
         col = GetComponent<CapsuleCollider2D>();
@@ -37,11 +38,13 @@ public class Missile : MonoBehaviour
 
     public void Init(MissileController owner)
     {
+        // 由生成导弹的 Controller 注入数值来源，避免场景扫描。
         weapon = owner;
     }
 
     public void SetAnimationDuration(float newDuration)
     {
+        // 通过调整 Animator.speed 让目标动画适配热更后的落地时间。
         if (ani == null || targetAnimation == null || newDuration <= 0f)
         {
             return;
@@ -82,6 +85,7 @@ public class Missile : MonoBehaviour
 
     public void Fire()
     {
+        // 动画事件调用：打开短时间碰撞窗口，随后销毁导弹落点。
         if (col != null)
         {
             col.enabled = true;

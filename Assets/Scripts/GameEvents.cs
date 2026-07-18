@@ -6,28 +6,28 @@ using System;
 /// </summary>
 public static class GameEvents
 {
-    // current, max
+    // 参数依次为当前生命值、最大生命值。
     public static event Action<float, float> HealthChanged;
 
-    // currentExp, levelExp, level
+    // 参数依次为当前经验、升级所需经验、当前等级。
     public static event Action<int, int, int> ExpChanged;
 
-    // level
+    // 参数为变化后的玩家等级。
     public static event Action<int> LevelChanged;
 
-    // killCount
+    // 参数为本局最新击杀数。
     public static event Action<int> KillCountChanged;
 
-    // runTime
+    // 参数为本局已经运行的秒数。
     public static event Action<float> RunTimeChanged;
 
-    // score
+    // 参数为 JSON 存档中的最新总分。
     public static event Action<int> ScoreChanged;
 
-    // skillId
+    // 参数为刚解锁的技能 ID。
     public static event Action<int> SkillUnlocked;
 
-    // taskId, current, goal
+    // 参数依次为任务 ID、当前进度、目标进度。
     public static event Action<int, int, int> TaskProgressChanged;
 
     public static void RaiseHealthChanged(float current, float max)

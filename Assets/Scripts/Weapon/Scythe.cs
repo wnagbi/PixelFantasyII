@@ -11,6 +11,7 @@ public class Scythe : MonoBehaviour
 
     private void Start()
     {
+        // dirPoint 是整个投射物的移动根节点，Controller 位于其父级层级。
         weapon = dirPoint.transform.parent.parent.GetComponent<ScytheController>();
         if (weapon != null)
         {
@@ -25,6 +26,7 @@ public class Scythe : MonoBehaviour
             return;
         }
 
+        // 根节点向发射方向移动，镰刀子物体同时自转形成飞行表现。
         dirPoint.transform.Translate(weapon.speed * Vector3.right * Time.deltaTime);
         transform.Rotate(-Vector3.forward * weapon.turnSpeed * Time.deltaTime, Space.Self);
         if (finishTimer)
@@ -54,6 +56,7 @@ public class Scythe : MonoBehaviour
 
     private IEnumerator Timer(float timer)
     {
+        // 飞行时间结束后让 Update 销毁整个方向根节点。
         yield return new WaitForSeconds(timer);
         finishTimer = true;
     }

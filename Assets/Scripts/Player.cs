@@ -11,7 +11,8 @@ public enum PlayerStateType
     Die
 }
 
-// Main player controller: movement, state machine and damage entry.
+// 玩家运行时核心组件。
+// 负责输入移动、状态机切换、受伤死亡入口，并向 PlayerRuntimeRegistry 注册当前玩家。
 public class Player : MonoBehaviour
 {
     [Header("Player")]
