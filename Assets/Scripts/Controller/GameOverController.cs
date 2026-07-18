@@ -17,6 +17,14 @@ public class GameOverController : MonoBehaviour
     public LocalizedString scoreString;
     public LocalizedString killNumString;
 
+    private void OnEnable()
+    {
+        // Cursor 状态会跨场景保留。战斗场景可能因键盘/手柄模式将其锁定并隐藏，
+        // 结算界面属于纯 UI 场景，因此启用时必须主动恢复鼠标交互。
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
     private void Awake()
     {
         // 本局时间只存在运行时，不作为长期存档保存。

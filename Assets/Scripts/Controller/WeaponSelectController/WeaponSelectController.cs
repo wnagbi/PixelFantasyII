@@ -88,6 +88,7 @@ public class WeaponSelectController : MonoBehaviour
         }
         box.SetActive(true);
         Time.timeScale = 0f;
+        InputController.instance?.EnterUiMode();
     }
     #region Check
     public void CheckLeft() //Left button check event
@@ -96,6 +97,7 @@ public class WeaponSelectController : MonoBehaviour
         left.GetComponent<WeaponSelect>().LevelUp();
         Time.timeScale = 1f;
         box.SetActive(false);
+        InputController.instance?.ExitUiMode();
         ani.enabled = true;
         FinishSelect();
         
@@ -106,6 +108,7 @@ public class WeaponSelectController : MonoBehaviour
         mid.GetComponent<WeaponSelect>().LevelUp();
         Time.timeScale = 1f;
         box.SetActive(false);
+        InputController.instance?.ExitUiMode();
         ani.enabled = true;  
         FinishSelect();
         
@@ -116,6 +119,7 @@ public class WeaponSelectController : MonoBehaviour
         right.GetComponent<WeaponSelect>().LevelUp();
         Time.timeScale = 1f;
         box.SetActive(false);
+        InputController.instance?.ExitUiMode();
         ani.enabled = true;
         FinishSelect();
 

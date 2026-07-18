@@ -23,26 +23,36 @@ public class TitlePanelController : MonoBehaviour
     public void TitleOpen()
     {
         // 标题主面板默认选中项。
-        EventSystem.current.SetSelectedGameObject(titileFirst);
-        InputController.instance.firstSelectedUI = titileFirst;
+        FocusUi(titileFirst);
     }
     public void SettingOpen() 
     {
         // 设置面板默认选中项。
-        EventSystem.current.SetSelectedGameObject(settingFirst);
-        InputController.instance.firstSelectedUI = settingFirst;
+        FocusUi(settingFirst);
     }
     public void SelectOpen() 
     {
         // 地图选择面板默认选中项。
-        EventSystem.current.SetSelectedGameObject(selectFirst);
-        InputController.instance.firstSelectedUI = selectFirst;
+        FocusUi(selectFirst);
     }
     public void SelectGuidle() 
     {
         // 教程/指南面板默认选中项。
-        EventSystem.current.SetSelectedGameObject(guidleFirst);
-        InputController.instance.firstSelectedUI = guidleFirst;
+        FocusUi(guidleFirst);
+    }
+
+    private static void FocusUi(GameObject defaultSelection)
+    {
+        if (InputController.instance != null)
+        {
+            InputController.instance.EnterUiMode(defaultSelection);
+            return;
+        }
+
+        if (EventSystem.current != null)
+        {
+            EventSystem.current.SetSelectedGameObject(defaultSelection);
+        }
     }
 
     public void InitButton() 

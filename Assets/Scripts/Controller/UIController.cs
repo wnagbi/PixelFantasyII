@@ -63,6 +63,12 @@ public class UIController : MonoBehaviour
     {
         escPanel.SetActive(!escPanel.activeSelf);
         Time.timeScale = escPanel.activeSelf ? 0f : 1f;
+
+        // 暂停面板打开时允许鼠标交互，关闭后立即回到战斗光标模式。
+        if (InputController.instance != null)
+        {
+            InputController.instance.SetUiMode(escPanel.activeSelf);
+        }
     }
 
     public void UpdateExp(int currentExp, int levelExp, int currentLevel)

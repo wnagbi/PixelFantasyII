@@ -24,14 +24,33 @@ public class InputController : MonoBehaviour
     private EventSystem eventSystem;
     private InputDevice currentDevice;
     private bool lastKeyboardMouseInputWasMouse;
+    private bool isUiMode;
 
     private void Awake()
     {
+        // 部分旧场景同时在场景控制器和玩家 Prefab 上挂了 InputController。
+        // 只允许第一个实例工作，避免两个 Update 反复覆盖光标状态。
+        if (instance != null && instance != this)
+        {
+            enabled = false;
+            return;
+        }
+
         // static 枚举跨场景保留上一次设备类型，新场景启动时立即恢复对应 UI 模式。
         instance = this;
         eventSystem = EventSystem.current;
+        isUiMode = firstSelectedUI != null;
+        lastKeyboardMouseInputWasMouse = isUiMode && CurrentDeviceType == PlayerInputDeviceType.KeyboardMouse;
         currentDevice = GetDeviceFromType(CurrentDeviceType);
         ApplyDeviceMode(CurrentDeviceType);
+    }
+
+    private void OnDestroy()
+    {
+        if (instance == this)
+        {
+            instance = null;
+        }
     }
 
     private void Update()
@@ -81,6 +100,42 @@ public class InputController : MonoBehaviour
         return CurrentDeviceType == PlayerInputDeviceType.KeyboardMouse;
     }
 
+    public bool IsUiMode()
+    {
+        return isUiMode;
+    }
+
+    public void EnterUiMode(GameObject defaultSelectedUi = null)
+    {
+        // UI 模式决定光标是否允许出现；输入设备只决定鼠标和手柄的表现差异。
+        if (defaultSelectedUi != null)
+        {
+            firstSelectedUI = defaultSelectedUi;
+        }
+
+        isUiMode = true;
+        ApplyDeviceMode(CurrentDeviceType);
+    }
+
+    public void ExitUiMode()
+    {
+        isUiMode = false;
+        firstSelectedUI = null;
+        ApplyDeviceMode(CurrentDeviceType);
+    }
+
+    public void SetUiMode(bool enabled)
+    {
+        if (enabled)
+        {
+            EnterUiMode();
+        }
+        else
+        {
+            ExitUiMode();
+        }
+    }
+
     private void DetectInputDevice()
     {
         InputDevice activeDevice = GetActiveInputDevice();
@@ -121,9 +176,9 @@ public class InputController : MonoBehaviour
     private void ApplyDeviceMode(PlayerInputDeviceType deviceType)
     {
         bool enableGamepadMode = deviceType == PlayerInputDeviceType.Gamepad;
-        bool showMouse = deviceType == PlayerInputDeviceType.KeyboardMouse && lastKeyboardMouseInputWasMouse;
+        bool showMouse = isUiMode && deviceType == PlayerInputDeviceType.KeyboardMouse;
 
-        // 只有真实鼠标输入时才显示鼠标。键盘游玩和手柄游玩都隐藏鼠标。
+        // 战斗模式始终隐藏鼠标；只有进入 UI 且当前使用键鼠时才显示。
         Cursor.visible = showMouse;
         Cursor.lockState = showMouse ? CursorLockMode.None : CursorLockMode.Locked;
 
@@ -132,7 +187,11 @@ public class InputController : MonoBehaviour
             return;
         }
 
-        if (enableGamepadMode)
+        if (!isUiMode)
+        {
+            eventSystem.SetSelectedGameObject(null);
+        }
+        else if (enableGamepadMode || !lastKeyboardMouseInputWasMouse)
         {
             if (firstSelectedUI != null && eventSystem.currentSelectedGameObject == null)
             {
@@ -148,7 +207,7 @@ public class InputController : MonoBehaviour
     private void RefreshUiSelection()
     {
         // 手柄模式下如果面板切换导致选中项为空，恢复 firstSelectedUI 以便继续导航。
-        if (eventSystem == null)
+        if (eventSystem == null || !isUiMode)
         {
             return;
         }
@@ -158,9 +217,8 @@ public class InputController : MonoBehaviour
             if (lastKeyboardMouseInputWasMouse && eventSystem.currentSelectedGameObject != null)
             {
                 eventSystem.SetSelectedGameObject(null);
+                return;
             }
-
-            return;
         }
 
         if (firstSelectedUI != null && eventSystem.currentSelectedGameObject == null)
@@ -171,16 +229,24 @@ public class InputController : MonoBehaviour
 
     private bool HasMouseInput()
     {
-        // 鼠标移动、点击或滚轮都视为切换到鼠标模式的有效输入。
         if (Mouse.current == null)
         {
             return false;
         }
 
-        return Mouse.current.delta.ReadValue().sqrMagnitude > 0.01f
-            || Mouse.current.leftButton.wasPressedThisFrame
+        bool buttonPressed = Mouse.current.leftButton.wasPressedThisFrame
             || Mouse.current.rightButton.wasPressedThisFrame
-            || Mouse.current.middleButton.wasPressedThisFrame
+            || Mouse.current.middleButton.wasPressedThisFrame;
+
+        // 战斗中忽略鼠标移动和滚轮，避免碰到鼠标就切换图标或显示光标。
+        // 鼠标按键仍可能绑定攻击，因此按键本身继续视为有效输入。
+        if (!isUiMode)
+        {
+            return buttonPressed;
+        }
+
+        return buttonPressed
+            || Mouse.current.delta.ReadValue().sqrMagnitude > 0.01f
             || Mathf.Abs(Mouse.current.scroll.ReadValue().y) > 0.01f;
     }
 }
