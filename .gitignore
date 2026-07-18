@@ -29,6 +29,9 @@
 # Visual Studio Code auto-generated files
 .vscode/
 
+# Codex local workspace configuration
+.codex/
+
 # Gradle cache directory
 .gradle/
 
