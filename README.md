@@ -147,10 +147,3 @@ http://127.0.0.1:18080/LuaRemote/lua_manifest.json
 - 修改 Addressable Prefab、Sprite 或 VFX 后重新 Build Addressables，不重新打包客户端，重启游戏验证资源变化。
 - 关闭服务器后启动游戏，验证 fallback 是否正常进入游戏。
 
-
-## 备注
-
-- 本项目当前重点为单机核心玩法与热更新系统展示。
-- 本地 HTTP 服务器用于模拟商业化热更新流程，不代表已经接入正式线上服务器或 CDN。
-- Addressables 可以热更新资源和 Prefab 序列化数据，但不能热更新客户端不存在的 C# 代码。
-- C# 函数逻辑如需热更新，需要提前设计为 C# Host 调 Lua Rule 的形式。
