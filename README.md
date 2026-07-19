@@ -34,6 +34,9 @@
 - **事件驱动 UI 与运行时数据解耦**  
   使用 `GameEvents` 广播血量、经验、击杀数、分数、技能解锁和任务进度变化，使用 `RunData` 管理本局击杀数和生存时间，减少 UI 每帧轮询。
 
+- **有限状态机（FSM）**
+  使用统一的 `IState` 接口管理玩家和敌人的 `Idle`、`Move`、`Attack`、`Hurt`、`Die` 等状态，通过 `OnEnter`、`OnUpdate`、`OnFixedUpdate`、`OnExit` 约束状态生命周期，并由 `TransitionState` 负责安全切换。敌人状态同时支持 C# 默认实现与 `LuaState` 热更新实现，在不修改状态机调用层的情况下替换 AI 状态规则。
+
 - **EnemyManager 空间分区寻敌系统**
   使用“敌人注册表 + 固定网格空间分区”统一管理寻敌。敌人从对象池启用时注册、回收时注销，空间网格在首次查询时按帧懒重建，同一帧内的多次寻敌共用查询数据。范围寻敌只扫描目标附近的网格，并使用距离平方筛选最近目标，减少大量敌人场景下的全列表遍历；同时统一过滤死亡、禁用或已经回收的敌人。武器和 Lua 规则继续通过 `GetNearestEnemy`、`GetNearestEnemyInRange`、`GetRandomEnemy` 等稳定接口获取目标。
 
@@ -51,6 +54,29 @@
 
 - **多语言切换**  
   接入 `Localization`，通过语言下拉框切换 `LocalizationSettings.SelectedLocale`，并将语言选择保存到 `settings.json`，重启后自动恢复用户上次选择的语言。
+
+## 使用的插件、官方包与 Unity 系统
+
+### 第三方插件
+
+- **xLua**：实现 C# Host 与 Lua Rule 分层、玩法规则加载、模块重载以及 Lua Zip 服务器热更新。
+- **DOTween**：实现血条平滑过渡、伤害数字缩放与位移动画，并通过 Tween 回调管理伤害数字的对象池回收。
+
+### Unity 官方包
+
+- **Input System**：接收玩家移动与技能输入，识别键鼠和手柄设备，并根据当前输入模式切换 UI 图标与焦点。
+- **Addressables**：通过远端 Catalog、Bundle 和资源 key 加载可更新的 Sprite、VFX、武器、敌人及掉落物 Prefab。
+- **Localization**：管理技能、武器、设置界面等文本的多语言切换，并通过文本变化事件刷新当前 UI。
+- **Newtonsoft.Json for Unity**：序列化本地设置、总分和技能解锁进度，并处理文件缺失、字段缺失和 JSON 损坏回退。
+- **Unity UI（UGUI）**：构建菜单、技能按钮、血条、经验条、加载进度条及 EventSystem 导航交互。
+
+### Unity 内置系统
+
+- **Animator / Animation State Machine**：控制玩家、敌人、武器和界面动画，并与角色状态机及场景切换流程配合。
+- **Rigidbody2D / Collider2D**：处理玩家与敌人移动、武器命中、接触伤害和拾取物触发。
+- **Tilemap**：生成并维护战斗地图格子，根据玩家位置清理超出渲染范围的 Tile。
+- **AudioMixer**：管理主音量、音乐和音效通道，并将用户设置保存到 `settings.json`。
+- **Particle System**：负责技能和武器的粒子表现，并作为 Addressables 可更新特效资源的一部分。
 
 
 ## 热更新系统

@@ -105,6 +105,29 @@ public static class LuaConfig
     }
 
     /// <summary>
+    /// 从两层字符串字典中读取整数，例如 config.skill_config.skills.rage.price。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：任意层级缺失或类型转换失败时返回 fallback，LuaTable 由本方法统一释放。
+    /// </remarks>
+    public static int GetInt(string moduleName, string tableKey, string entryKey, string key, int fallback)
+    {
+        return GetTableEntryValue(moduleName, tableKey, entryKey, key, fallback);
+    }
+
+    /// <summary>
+    /// 从两层字符串字典中读取字符串，例如 config.skill_config.skills.magnet.iconKey。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：空字符串按无效配置处理并返回 fallback，适合保留 Inspector 资源回退。
+    /// </remarks>
+    public static string GetString(string moduleName, string tableKey, string entryKey, string key, string fallback)
+    {
+        string value = GetTableEntryValue(moduleName, tableKey, entryKey, key, fallback);
+        return string.IsNullOrEmpty(value) ? fallback : value;
+    }
+
+    /// <summary>
     /// 尝试执行 TryGetTable，并通过返回值表示本次操作是否成功。
     /// </summary>
     /// <remarks>
@@ -145,6 +168,17 @@ public static class LuaConfig
     {
         // 调用 Lua 函数并要求返回 bool，常用于“Lua 是否接管了这次行为”。
         return TryCall(moduleName, functionName, out result, host, id);
+    }
+
+    /// <summary>
+    /// 调用接收字符串配置 key 的 Lua 规则，并读取其 bool 返回值。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：适用于 magnet、rage 等可读 key；返回 false 时业务层必须执行 C# fallback。
+    /// </remarks>
+    public static bool TryCallBool(string moduleName, string functionName, object host, string key, out bool result)
+    {
+        return TryCall(moduleName, functionName, out result, host, key);
     }
 
     /// <summary>
@@ -284,6 +318,45 @@ public static class LuaConfig
         {
             nested?.Dispose();
             table.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// 从模块根表依次进入 tableKey 和 entryKey，再读取目标字段并转换类型。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：该方法不向调用方暴露 LuaTable，防止业务代码遗漏 Dispose 或缓存失效引用。
+    /// </remarks>
+    private static T GetTableEntryValue<T>(string moduleName, string tableKey, string entryKey, string key, T fallback)
+    {
+        if (!LuaManager.Instance.TryRequireTable(moduleName, out LuaTable root))
+        {
+            return fallback;
+        }
+
+        LuaTable dictionary = null;
+        LuaTable entry = null;
+        try
+        {
+            dictionary = root.Get<LuaTable>(tableKey);
+            entry = dictionary?.Get<string, LuaTable>(entryKey);
+            if (entry == null)
+            {
+                return fallback;
+            }
+
+            object value = entry.Get<object>(key);
+            return ConvertLuaValue(value, fallback);
+        }
+        catch
+        {
+            return fallback;
+        }
+        finally
+        {
+            entry?.Dispose();
+            dictionary?.Dispose();
+            root.Dispose();
         }
     }
 

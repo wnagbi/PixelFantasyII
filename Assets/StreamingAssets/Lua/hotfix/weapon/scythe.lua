@@ -1,7 +1,8 @@
 -- 镰刀热更规则。Lua 负责环形发射角度和成长，Scythe C# 实体负责飞行与碰撞。
 local M = {}
 
--- 按 count 将镰刀均匀分布在 360 度方向发射。
+-- 用途：按 count 将镰刀均匀分布到 360 度方向并生成投射物。
+-- 使用注意：count 至少为 1，且生成必须通过 Host 接口以使用运行时 Addressables Prefab。
 function M.OnAttack(host)
     host:ResetCooldown()
     local count = host.count
@@ -15,7 +16,8 @@ function M.OnAttack(host)
     end
 end
 
--- 调整伤害、冷却和发射数量；满级后通知选择系统。
+-- 用途：调整镰刀伤害、冷却和发射数量，并处理满级状态。
+-- 使用注意：冷却值不得降到 0 以下；每次调用只推进一个等级。
 function M.OnLevelUp(host)
     local level = host.level
     if level == 0 then

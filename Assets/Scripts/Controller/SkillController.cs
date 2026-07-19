@@ -47,9 +47,12 @@ public class SkillController : MonoBehaviour
     private float currentTime;
     private string dimensionSlashEffectKey;
 
-    // 技能 Lua 规则入口。OnSkill(host, skillId) 返回 true 表示 Lua 已经处理本次释放。
+    // 技能 Lua 规则入口。OnSkill(host, skillKey) 返回 true 表示 Lua 已经处理本次释放。
     private const string SkillLuaModule = "hotfix.skill.skill_module";
     private const string SkillConfigModule = "config.skill_config";
+    private const string MagnetSkillKey = "magnet";
+    private const string RageSkillKey = "rage";
+    private const string DimensionSlashSkillKey = "dimension_slash";
 
     private void OnEnable()
     {
@@ -108,7 +111,7 @@ public class SkillController : MonoBehaviour
     {
         // 磁铁技能优先交给 Lua 判断解锁、CD、释放条件和实际效果。
         // Lua 不处理时，继续走下面的 C# 默认逻辑。
-        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, 1, out bool handled1) && handled1)
+        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, MagnetSkillKey, out bool handled1) && handled1)
         {
             return;
         }
@@ -130,7 +133,7 @@ public class SkillController : MonoBehaviour
     public void OnSkill2() 
     {
         // 狂怒技能优先交给 Lua。Lua 可以热更额外伤害、持续时间和 CD。
-        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, 2, out bool handled2) && handled2)
+        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, RageSkillKey, out bool handled2) && handled2)
         {
             return;
         }
@@ -153,7 +156,7 @@ public class SkillController : MonoBehaviour
     public void OnSkill3() 
     {
         // 次元斩技能优先交给 Lua。C# 仍保留 UI、特效实例化和冷却表现。
-        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, 3, out bool handled3) && handled3)
+        if (LuaConfig.TryCallBool(SkillLuaModule, "OnSkill", this, DimensionSlashSkillKey, out bool handled3) && handled3)
         {
             return;
         }
@@ -419,14 +422,14 @@ public class SkillController : MonoBehaviour
     /// </remarks>
     private IEnumerator LoadAddressableSkillAssets()
     {
-        yield return LoadSkillIcon(1, magnetImage);
-        yield return LoadSkillIcon(1, magnet != null ? magnet.GetComponent<Image>() : null);
-        yield return LoadSkillIcon(2, rageImage);
-        yield return LoadSkillIcon(2, rage != null ? rage.GetComponent<Image>() : null);
-        yield return LoadSkillIcon(3, dsImage);
-        yield return LoadSkillIcon(3, ds != null ? ds.GetComponent<Image>() : null);
+        yield return LoadSkillIcon(MagnetSkillKey, magnetImage);
+        yield return LoadSkillIcon(MagnetSkillKey, magnet != null ? magnet.GetComponent<Image>() : null);
+        yield return LoadSkillIcon(RageSkillKey, rageImage);
+        yield return LoadSkillIcon(RageSkillKey, rage != null ? rage.GetComponent<Image>() : null);
+        yield return LoadSkillIcon(DimensionSlashSkillKey, dsImage);
+        yield return LoadSkillIcon(DimensionSlashSkillKey, ds != null ? ds.GetComponent<Image>() : null);
 
-        dimensionSlashEffectKey = GetSkillResourceKey(3, "effectKey", string.Empty);
+        dimensionSlashEffectKey = GetSkillResourceKey(DimensionSlashSkillKey, "effectKey", string.Empty);
     }
 
     /// <summary>
@@ -435,14 +438,14 @@ public class SkillController : MonoBehaviour
     /// <remarks>
     /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
     /// </remarks>
-    private IEnumerator LoadSkillIcon(int skillId, Image targetImage)
+    private IEnumerator LoadSkillIcon(string skillKey, Image targetImage)
     {
         if (targetImage == null)
         {
             yield break;
         }
 
-        string iconKey = GetSkillResourceKey(skillId, "iconKey", string.Empty);
+        string iconKey = GetSkillResourceKey(skillKey, "iconKey", string.Empty);
         if (string.IsNullOrWhiteSpace(iconKey))
         {
             yield break;
@@ -453,9 +456,9 @@ public class SkillController : MonoBehaviour
             sprite =>
             {
                 targetImage.sprite = sprite;
-                Debug.Log($"[SkillController] Applied Addressable icon for skill {skillId}: {iconKey} -> {targetImage.gameObject.name}");
+                Debug.Log($"[SkillController] Applied Addressable icon for skill {skillKey}: {iconKey} -> {targetImage.gameObject.name}");
             },
-            () => Debug.LogWarning($"[SkillController] Use Inspector fallback icon for skill {skillId}.")
+            () => Debug.LogWarning($"[SkillController] Use Inspector fallback icon for skill {skillKey}.")
         );
     }
 
@@ -465,34 +468,14 @@ public class SkillController : MonoBehaviour
     /// <remarks>
     /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
     /// </remarks>
-    private string GetSkillResourceKey(int skillId, string keyName, string fallback)
+    private string GetSkillResourceKey(string skillKey, string keyName, string fallback)
     {
-        if (!LuaConfig.TryGetTable(SkillConfigModule, "skills", out XLua.LuaTable skills))
+        if (string.IsNullOrWhiteSpace(skillKey))
         {
             return fallback;
         }
 
-        XLua.LuaTable skill = null;
-        try
-        {
-            skill = skills.Get<int, XLua.LuaTable>(skillId);
-            if (skill == null)
-            {
-                return fallback;
-            }
-
-            string value = skill.Get<string>(keyName);
-            return string.IsNullOrWhiteSpace(value) ? fallback : value;
-        }
-        catch
-        {
-            return fallback;
-        }
-        finally
-        {
-            skill?.Dispose();
-            skills.Dispose();
-        }
+        return LuaConfig.GetString(SkillConfigModule, "skills", skillKey, keyName, fallback);
     }
 
     /// <summary>

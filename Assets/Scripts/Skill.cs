@@ -10,8 +10,13 @@ using UnityEngine.UI;
 public class Skill : MonoBehaviour
 {
     private const string SkillConfigModule = "config.skill_config";
+    private const string MagnetSkillKey = "magnet";
+    private const string RageSkillKey = "rage";
+    private const string DimensionSlashSkillKey = "dimension_slash";
 
     public int ID;
+    [Tooltip("Lua skills 字典中的字符串 key。留空时根据 ID 使用内置兼容映射。")]
+    public string configKey;
     public string nameSkill;
     public int price;
     public bool isAlreadyBuy;
@@ -32,6 +37,18 @@ public class Skill : MonoBehaviour
         // 缓存 Image，用于切换未购买锁定图和已购买原图。
         image = GetComponent<Image>();
         priceString.TableEntryReference = "Price";
+
+        // 存档继续使用数字 ID，Lua 配置使用可读字符串 key。
+        configKey = ResolveSkillConfigKey(ID, configKey);
+        int configuredPrice = LuaConfig.GetInt(SkillConfigModule, "skills", configKey, "price", price);
+        if (configuredPrice >= 0)
+        {
+            price = configuredPrice;
+        }
+        else
+        {
+            Debug.LogWarning($"[Skill] Invalid Lua price for {configKey}: {configuredPrice}. Use Inspector fallback {price}.");
+        }
     }
 
     private void Start()
@@ -179,7 +196,7 @@ public class Skill : MonoBehaviour
     private IEnumerator LoadAddressableIcon()
     {
         // 图标 key 从 Lua 配置读取；加载失败时继续使用 Inspector 里拖好的图。
-        string iconKey = GetSkillResourceKey(ID, "iconKey", string.Empty);
+        string iconKey = GetSkillResourceKey(configKey, "iconKey", string.Empty);
         if (string.IsNullOrWhiteSpace(iconKey))
         {
             yield break;
@@ -198,39 +215,44 @@ public class Skill : MonoBehaviour
     }
 
     /// <summary>
-    /// Lua 表结构来自 config.skill_config：skills[skillId].iconKey / effectKey。
+    /// 从 Lua 的 skills 字符串字典中读取当前技能的 Addressable 资源 key。
     /// </summary>
     /// <remarks>
     /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
     /// </remarks>
-    private string GetSkillResourceKey(int skillId, string keyName, string fallback)
+    private string GetSkillResourceKey(string skillKey, string keyName, string fallback)
     {
-        // Lua 表结构来自 config.skill_config：skills[skillId].iconKey / effectKey。
-        if (!LuaConfig.TryGetTable(SkillConfigModule, "skills", out XLua.LuaTable skills))
+        if (string.IsNullOrWhiteSpace(skillKey))
         {
             return fallback;
         }
 
-        XLua.LuaTable skill = null;
-        try
-        {
-            skill = skills.Get<int, XLua.LuaTable>(skillId);
-            if (skill == null)
-            {
-                return fallback;
-            }
+        return LuaConfig.GetString(SkillConfigModule, "skills", skillKey, keyName, fallback);
+    }
 
-            string value = skill.Get<string>(keyName);
-            return string.IsNullOrWhiteSpace(value) ? fallback : value;
-        }
-        catch
+    /// <summary>
+    /// 将旧的整数技能 ID 转换成 Lua 配置使用的可读字符串 key。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：Inspector 已填写 configKey 时优先使用该值；新增技能应明确填写 key，避免依赖默认映射。
+    /// </remarks>
+    private static string ResolveSkillConfigKey(int skillId, string configuredKey)
+    {
+        if (!string.IsNullOrWhiteSpace(configuredKey))
         {
-            return fallback;
+            return configuredKey.Trim();
         }
-        finally
+
+        switch (skillId)
         {
-            skill?.Dispose();
-            skills.Dispose();
+            case 1:
+                return MagnetSkillKey;
+            case 2:
+                return RageSkillKey;
+            case 3:
+                return DimensionSlashSkillKey;
+            default:
+                return string.Empty;
         }
     }
 

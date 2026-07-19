@@ -3,13 +3,15 @@ local pickup_config = require("config.pickup_config")
 
 local M = {}
 
--- 返回经验球最终经验值；pickup 是触发拾取的 C# PickUp 实例。
+-- 用途：计算经验球被拾取时最终增加的经验值。
+-- 使用注意：必须返回数字；pickup 是 C# PickUp 实例，配置缺失时倍率应回退为 1。
 function M.GetExpValue(pickup, value)
     local cfg = pickup_config.Exp or {}
     return value * (cfg.value_multiplier or 1)
 end
 
--- 返回血瓶最终回复量。
+-- 用途：计算血瓶被拾取时最终恢复的生命值。
+-- 使用注意：必须返回数字；不要在这里直接修改 PlayerData，C# 会应用返回结果。
 function M.GetHealValue(pickup, value)
     local cfg = pickup_config.Blood or {}
     return value * (cfg.heal_multiplier or 1)

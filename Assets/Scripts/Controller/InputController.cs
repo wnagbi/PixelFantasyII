@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public enum PlayerInputDeviceType
 {
@@ -25,6 +26,7 @@ public class InputController : MonoBehaviour
     private InputDevice currentDevice;
     private bool lastKeyboardMouseInputWasMouse;
     private bool isUiMode;
+    private bool pendingDefaultSelection;
 
     private void Awake()
     {
@@ -150,7 +152,9 @@ public class InputController : MonoBehaviour
         }
 
         isUiMode = true;
-        ApplyDeviceMode(CurrentDeviceType);
+        pendingDefaultSelection = true;
+        // 面板切换时旧选中项可能仍被 EventSystem 保存，因此需要强制刷新一次焦点。
+        ApplyDeviceMode(CurrentDeviceType, true);
     }
 
     /// <summary>
@@ -162,6 +166,7 @@ public class InputController : MonoBehaviour
     public void ExitUiMode()
     {
         isUiMode = false;
+        pendingDefaultSelection = false;
         firstSelectedUI = null;
         ApplyDeviceMode(CurrentDeviceType);
     }
@@ -243,9 +248,9 @@ public class InputController : MonoBehaviour
     /// 将设备类型和 UI 模式应用到 Cursor 与 EventSystem 焦点。
     /// </summary>
     /// <remarks>
-    /// 使用注意：鼠标模式清空导航选中，键盘或手柄模式仅在焦点为空时恢复默认项。
+    /// 使用注意：鼠标模式清空导航选中；切换面板时可强制把焦点转移到新的默认项。
     /// </remarks>
-    private void ApplyDeviceMode(PlayerInputDeviceType deviceType)
+    private void ApplyDeviceMode(PlayerInputDeviceType deviceType, bool forceSelection = false)
     {
         bool enableGamepadMode = deviceType == PlayerInputDeviceType.Gamepad;
         bool showMouse = isUiMode && deviceType == PlayerInputDeviceType.KeyboardMouse;
@@ -254,25 +259,30 @@ public class InputController : MonoBehaviour
         Cursor.visible = showMouse;
         Cursor.lockState = showMouse ? CursorLockMode.None : CursorLockMode.Locked;
 
-        if (eventSystem == null)
+        EventSystem activeEventSystem = GetActiveEventSystem();
+        if (activeEventSystem == null)
         {
             return;
         }
 
         if (!isUiMode)
         {
-            eventSystem.SetSelectedGameObject(null);
+            activeEventSystem.SetSelectedGameObject(null);
         }
         else if (enableGamepadMode || !lastKeyboardMouseInputWasMouse)
         {
-            if (firstSelectedUI != null && eventSystem.currentSelectedGameObject == null)
+            bool currentSelectionInvalid = !IsValidUiSelection(activeEventSystem.currentSelectedGameObject);
+            if (IsValidUiSelection(firstSelectedUI) && (forceSelection || currentSelectionInvalid))
             {
-                eventSystem.SetSelectedGameObject(firstSelectedUI);
+                // 先清空旧焦点，确保 EventSystem 能从已关闭面板切换到新面板。
+                activeEventSystem.SetSelectedGameObject(null);
+                activeEventSystem.SetSelectedGameObject(firstSelectedUI);
+                pendingDefaultSelection = false;
             }
         }
         else if (showMouse)
         {
-            eventSystem.SetSelectedGameObject(null);
+            activeEventSystem.SetSelectedGameObject(null);
         }
     }
 
@@ -285,7 +295,8 @@ public class InputController : MonoBehaviour
     private void RefreshUiSelection()
     {
         // 手柄模式下如果面板切换导致选中项为空，恢复 firstSelectedUI 以便继续导航。
-        if (eventSystem == null || !isUiMode)
+        EventSystem activeEventSystem = GetActiveEventSystem();
+        if (activeEventSystem == null || !isUiMode)
         {
             return;
         }
@@ -297,19 +308,55 @@ public class InputController : MonoBehaviour
                 // 鼠标模式不需要 EventSystem 的导航焦点。
                 // 无论当前是否已有选中项都必须直接返回，否则“当前为空”会继续执行
                 // 下方的默认焦点恢复，形成 清空 -> 选中 -> 清空 的逐帧循环。
-                if (eventSystem.currentSelectedGameObject != null)
+                if (activeEventSystem.currentSelectedGameObject != null)
                 {
-                    eventSystem.SetSelectedGameObject(null);
+                    activeEventSystem.SetSelectedGameObject(null);
                 }
 
                 return;
             }
         }
 
-        if (firstSelectedUI != null && eventSystem.currentSelectedGameObject == null)
+        if (IsValidUiSelection(firstSelectedUI)
+            && (pendingDefaultSelection || !IsValidUiSelection(activeEventSystem.currentSelectedGameObject)))
         {
-            eventSystem.SetSelectedGameObject(firstSelectedUI);
+            activeEventSystem.SetSelectedGameObject(null);
+            activeEventSystem.SetSelectedGameObject(firstSelectedUI);
+            pendingDefaultSelection = false;
         }
+    }
+
+    /// <summary>
+    /// 获取当前场景的 EventSystem，并在场景初始化顺序变化或旧引用失效时重新缓存。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：场景可以暂时没有 EventSystem，此时返回 null 并等待后续帧再次获取。
+    /// </remarks>
+    private EventSystem GetActiveEventSystem()
+    {
+        if (eventSystem == null || !eventSystem.isActiveAndEnabled)
+        {
+            eventSystem = EventSystem.current;
+        }
+
+        return eventSystem;
+    }
+
+    /// <summary>
+    /// 判断对象能否作为当前 UI 导航焦点。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：对象必须处于激活层级并挂有可交互的 Selectable，关闭面板中的旧按钮会被判定为无效。
+    /// </remarks>
+    private static bool IsValidUiSelection(GameObject selection)
+    {
+        if (selection == null || !selection.activeInHierarchy)
+        {
+            return false;
+        }
+
+        Selectable selectable = selection.GetComponent<Selectable>();
+        return selectable != null && selectable.IsActive() && selectable.IsInteractable();
     }
 
     /// <summary>
