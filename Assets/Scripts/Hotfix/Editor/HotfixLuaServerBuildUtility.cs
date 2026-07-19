@@ -22,6 +22,12 @@ public static class HotfixLuaServerBuildUtility
     public const string LuaManifestName = "lua_manifest.json";
     public const string LuaManifestUrl = "http://127.0.0.1:18080/LuaRemote/lua_manifest.json";
 
+    /// <summary>
+    /// 构建 HotfixLuaServerBuildUtility 中与 BuildHttpLuaHotfixPackage 对应的输出内容。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     [MenuItem("Hotfix/Lua/Build HTTP Lua Hotfix Package")]
     public static void BuildHttpLuaHotfixPackage()
     {
@@ -29,6 +35,12 @@ public static class HotfixLuaServerBuildUtility
         TryBuildHttpLuaHotfixPackage();
     }
 
+    /// <summary>
+    /// 尝试执行 TryBuildHttpLuaHotfixPackage，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static bool TryBuildHttpLuaHotfixPackage()
     {
         try
@@ -89,6 +101,12 @@ public static class HotfixLuaServerBuildUtility
         }
     }
 
+    /// <summary>
+    /// 手动创建 zip，方便跳过 Unity .meta 文件，并保持 Lua 相对路径干净。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixLuaServerBuildUtility 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void CreateLuaZip(string sourceRoot, string packagePath)
     {
         // 手动创建 zip，方便跳过 Unity .meta 文件，并保持 Lua 相对路径干净。
@@ -116,6 +134,12 @@ public static class HotfixLuaServerBuildUtility
         }
     }
 
+    /// <summary>
+    /// 使用 Uri 计算相对路径，兼容一些旧 Unity/.NET API 环境。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixLuaServerBuildUtility 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static string GetRelativePath(string root, string file)
     {
         // 使用 Uri 计算相对路径，兼容一些旧 Unity/.NET API 环境。
@@ -124,6 +148,12 @@ public static class HotfixLuaServerBuildUtility
         return Uri.UnescapeDataString(rootUri.MakeRelativeUri(fileUri).ToString());
     }
 
+    /// <summary>
+    /// Uri.MakeRelativeUri 要求目录路径以分隔符结尾，否则可能按文件路径处理。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixLuaServerBuildUtility 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static string AppendDirectorySeparatorChar(string path)
     {
         // Uri.MakeRelativeUri 要求目录路径以分隔符结尾，否则可能按文件路径处理。
@@ -136,6 +166,12 @@ public static class HotfixLuaServerBuildUtility
         return path + Path.DirectorySeparatorChar;
     }
 
+    /// <summary>
+    /// 运行时更新器会重新计算这个 hash，用来拒绝损坏或被篡改的 zip 包。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixLuaServerBuildUtility 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static string ComputeSha256(byte[] bytes)
     {
         // 运行时更新器会重新计算这个 hash，用来拒绝损坏或被篡改的 zip 包。

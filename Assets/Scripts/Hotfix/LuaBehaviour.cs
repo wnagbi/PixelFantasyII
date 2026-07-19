@@ -70,6 +70,12 @@ public class LuaBehaviour : MonoBehaviour
         DisposeLuaRefs();
     }
 
+    /// <summary>
+    /// 加载 LuaBehaviour 中与 LoadModule 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaBehaviour 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void LoadModule()
     {
         // 已加载或没有填写模块名时直接返回。
@@ -94,6 +100,12 @@ public class LuaBehaviour : MonoBehaviour
         onDestroyFunc = moduleTable.Get<LuaFunction>("OnDestroy");
     }
 
+    /// <summary>
+    /// 统一调用入口。所有 Lua 生命周期错误都只打 Warning，避免中断 Unity 生命周期。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaBehaviour 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void Call(LuaFunction func, params object[] args)
     {
         // 统一调用入口。所有 Lua 生命周期错误都只打 Warning，避免中断 Unity 生命周期。
@@ -127,6 +139,12 @@ public class LuaBehaviour : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 释放 LuaBehaviour 持有的非托管引用或运行时资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaBehaviour 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void DisposeLuaRefs()
     {
         // xLua 要求 LuaTable/LuaFunction 用完释放，否则 LuaEnv.Dispose 时可能提示引用未释放。

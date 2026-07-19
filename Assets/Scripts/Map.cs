@@ -19,6 +19,12 @@ public class Map : MonoBehaviour
         outline = GetComponent<Outline>();
     }
 
+    /// <summary>
+    /// 当前地图显示选中边框，并记录本次要进入的地图。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Map 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ChangeOutline() 
     {
         // 当前地图显示选中边框，并记录本次要进入的地图。

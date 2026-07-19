@@ -59,6 +59,12 @@ public class UIController : MonoBehaviour
         hpTween?.Kill();
     }
 
+    /// <summary>
+    /// 切换暂停面板、时间缩放和输入 UI 模式。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 UIController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void OnEsc()
     {
         escPanel.SetActive(!escPanel.activeSelf);
@@ -71,6 +77,12 @@ public class UIController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// ExpController 只负责计算经验变化，这里只负责显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     public void UpdateExp(int currentExp, int levelExp, int currentLevel)
     {
         // ExpController 只负责计算经验变化，这里只负责显示。
@@ -79,6 +91,12 @@ public class UIController : MonoBehaviour
         expText.text = "Level: " + currentLevel.ToString();
     }
 
+    /// <summary>
+    /// 设置 UIController 中与 SetHPValue 对应的状态或数据。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 UIController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void SetHPValue(float fillPercent)
     {
         fillPercent = Mathf.Clamp01(fillPercent);
@@ -101,11 +119,23 @@ public class UIController : MonoBehaviour
         ).SetEase(Ease.OutQuad);
     }
 
+    /// <summary>
+    /// 根据当前生命值和最大生命值刷新 HUD 血条。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void UpdateHealthUI(float current, float max)
     {
         SetHPValue(max <= 0f ? 0f : current / max);
     }
 
+    /// <summary>
+    /// 使用当前本地化前缀刷新 HUD 击杀数文本。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void UpdateKillNumber(int killCount)
     {
         if (killNumber != null)
@@ -114,18 +144,36 @@ public class UIController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 击杀文本本地化变化时使用当前击杀数重新渲染。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 UIController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnKillLabelChanged(string localizedText)
     {
         killLabel = localizedText;
         UpdateKillNumber(RunData.KillCount);
     }
 
+    /// <summary>
+    /// 保留旧公开方法，兼容可能存在的 Inspector 按钮或旧脚本调用。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 UIController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void setKillNumber()
     {
         // 保留旧公开方法，兼容可能存在的 Inspector 按钮或旧脚本调用。
         UpdateKillNumber(RunData.KillCount);
     }
 
+    /// <summary>
+    /// 请求退出打包后的游戏进程。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 UIController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void QuitGame()
     {
         Application.Quit();

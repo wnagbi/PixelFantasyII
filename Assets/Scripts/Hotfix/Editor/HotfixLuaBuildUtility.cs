@@ -15,13 +15,14 @@ public static class HotfixLuaBuildUtility
     // StreamingAssets 会被 Unity 打进包体，因此这里作为包内基础 Lua 回退目录。
     public const string TargetPath = "Assets/StreamingAssets/Lua";
 
-    [MenuItem("Hotfix/Sync Lua To StreamingAssets")]
-    public static void SyncLuaToStreamingAssets()
-    {
-        // 保留旧菜单入口，实际成功/失败逻辑交给 Try 方法，方便面板复用。
-        TrySyncLuaToStreamingAssets();
-    }
 
+
+    /// <summary>
+    /// 尝试执行 TrySyncLuaToStreamingAssets，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static bool TrySyncLuaToStreamingAssets()
     {
         try
@@ -57,14 +58,13 @@ public static class HotfixLuaBuildUtility
         }
     }
 
-    [MenuItem("Hotfix/Print Persistent LuaHotfix Path")]
-    public static void PrintPersistentLuaHotfixPath()
-    {
-        // 打印运行时下载 Lua 热更后实际落盘的位置。
-        LuaLoader.EnsureHotfixRoot();
-        Debug.Log($"[Hotfix] LuaHotfix path: {LuaLoader.HotfixRoot}");
-    }
 
+    /// <summary>
+    /// 先创建目标根目录，再按源目录结构复制子目录。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixLuaBuildUtility 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void CopyLuaDirectory(string source, string target)
     {
         // 先创建目标根目录，再按源目录结构复制子目录。
@@ -105,9 +105,15 @@ public class HotfixLuaBuildPreprocessor : IPreprocessBuildWithReport
     // callbackOrder 越小越早执行，这里提前同步，保证后续构建步骤看到最新 StreamingAssets。
     public int callbackOrder => -1000;
 
+    /// <summary>
+    /// 每次 Build Player 时都自动同步一次包内基础 Lua。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 HotfixLuaBuildPreprocessor 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void OnPreprocessBuild(BuildReport report)
     {
         // 每次 Build Player 时都自动同步一次包内基础 Lua。
-        HotfixLuaBuildUtility.SyncLuaToStreamingAssets();
+        HotfixLuaBuildUtility.TrySyncLuaToStreamingAssets();
     }
 }

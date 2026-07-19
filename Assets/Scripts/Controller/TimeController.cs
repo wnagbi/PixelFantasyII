@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -68,12 +68,24 @@ public class TimeController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 时间标签本地化变化时缓存新的显示前缀。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TimeController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnTimeLabelChanged(string localizedText)
     {
         timeLabel = localizedText;
         RefreshTimeText(Mathf.Max(0, Mathf.FloorToInt(runTime)));
     }
 
+    /// <summary>
+    /// 根据最新数据刷新 TimeController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TimeController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void RefreshTimeText(int wholeSeconds)
     {
         lastDisplayedSecond = wholeSeconds;

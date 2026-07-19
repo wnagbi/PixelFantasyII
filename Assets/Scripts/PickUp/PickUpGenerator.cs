@@ -7,6 +7,12 @@ public class PickUpGenerator : MonoBehaviour
     [SerializeField] private Vector3 offset;
     public PropPrefab[] propPrefab;
 
+    /// <summary>
+    /// 每种掉落独立做一次概率判定，成功后从对应对象池取出并放到敌人死亡点。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 PickUpGenerator 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void DropItems()
     {
         // 每种掉落独立做一次概率判定，成功后从对应对象池取出并放到敌人死亡点。
@@ -38,6 +44,12 @@ public class PickUpGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 判断 PickUpGenerator 当前是否满足 IsBloodDrop 对应的状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 PickUpGenerator 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private bool IsBloodDrop(PropPrefab propprefab)
     {
         // 优先读取 Prefab 上的 PickUp 类型，旧配置则兼容 Potion/Blood 池名。
@@ -51,6 +63,12 @@ public class PickUpGenerator : MonoBehaviour
         return propprefab.prefabName == "Potion" || propprefab.prefabName == "Blood";
     }
 
+    /// <summary>
+    /// stage_config.drops 支持 table 结构；读取失败时回退 Inspector 百分比。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 PickUpGenerator 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private float GetDropPercentage(PropPrefab propprefab)
     {
         // stage_config.drops 支持 table 结构；读取失败时回退 Inspector 百分比。
@@ -88,6 +106,12 @@ public class PickUpGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// xLua number 可能以不同托管数值类型返回，统一宽松转换成 float。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 PickUpGenerator 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private float ConvertLuaFloat(object value, float fallback)
     {
         // xLua number 可能以不同托管数值类型返回，统一宽松转换成 float。

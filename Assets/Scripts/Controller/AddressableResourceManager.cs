@@ -26,6 +26,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// 初始化 Addressables。并发调用会等待正在执行的初始化，失败时由业务层使用 Inspector fallback。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：应在检查 Catalog 或加载远端资源前 yield 等待该协程完成。
+    /// </remarks>
     public static IEnumerator Initialize()
     {
         if (initialized)
@@ -78,6 +81,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// 使用无进度回调的兼容入口。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：需要显示启动进度时应调用带 onProgress 参数的重载。
+    /// </remarks>
     public static IEnumerator CheckAndUpdateCatalogs()
     {
         yield return CheckAndUpdateCatalogs(null);
@@ -86,6 +92,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// 检查并应用远端 Catalog 更新。进度值范围为 0~1，供 StartLoadingView 映射显示。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：服务器不可用时该流程会记录警告并回退，调用方仍应继续启动游戏。
+    /// </remarks>
     public static IEnumerator CheckAndUpdateCatalogs(Action<float, string> onProgress)
     {
         Report(onProgress, 0f, "初始化资源系统...");
@@ -163,6 +172,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// 预下载指定 label/key 的全部依赖，不接收进度回调。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：labelOrKey 必须与 Addressables 配置一致；需要显示进度时使用带回调的重载。
+    /// </remarks>
     public static IEnumerator DownloadDependencies(string labelOrKey)
     {
         yield return DownloadDependencies(labelOrKey, null);
@@ -171,6 +183,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// 先计算尚未缓存的下载大小，再下载依赖；大小为 0 表示本地缓存已经是最新版本。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：调用方必须 yield 等待完成，失败时由后续资源加载使用 Inspector fallback。
+    /// </remarks>
     public static IEnumerator DownloadDependencies(string labelOrKey, Action<float, string> onProgress)
     {
         if (string.IsNullOrWhiteSpace(labelOrKey))
@@ -244,8 +259,10 @@ public static class AddressableResourceManager
 
     /// <summary>
     /// 按 Address 加载并缓存资源。相同 key 后续直接复用缓存 Handle 中的资源。
-    /// 调用方不应 Destroy 资源本体，使用结束后通过 Release(key) 释放引用。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：调用方不应 Destroy 资源本体，使用结束后通过 Release(key) 释放缓存引用。
+    /// </remarks>
     public static IEnumerator LoadAsset<T>(string key, Action<T> onSuccess, Action onFail = null) where T : UnityEngine.Object
     {
         if (string.IsNullOrWhiteSpace(key))
@@ -298,6 +315,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// GameObject 资源加载的语义化包装，返回 Prefab asset，不创建实例。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：成功回调得到的是 Prefab 资源；实例化和实例生命周期由调用方负责。
+    /// </remarks>
     public static IEnumerator LoadPrefab(string key, Action<GameObject> onSuccess, Action onFail = null)
     {
         yield return LoadAsset<GameObject>(key, onSuccess, onFail);
@@ -306,14 +326,20 @@ public static class AddressableResourceManager
     /// <summary>
     /// 预加载 Prefab 到缓存，供对象池替换 prefab 后继续使用普通 Instantiate。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：应在对象池预热前完成，并在 Addressables 加载失败时保留 Inspector 原 Prefab。
+    /// </remarks>
     public static IEnumerator PreloadPrefab(string key, Action<GameObject> onSuccess, Action onFail = null)
     {
         yield return LoadPrefab(key, onSuccess, onFail);
     }
 
     /// <summary>
-    /// 通过 Addressables 创建实例。成功实例必须使用 ReleaseInstance 回收，不能只调用 Destroy。
+    /// 通过 Addressables 创建并返回一个 GameObject 实例。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：成功实例必须使用 ReleaseInstance 回收，不能只调用 Destroy。
+    /// </remarks>
     public static IEnumerator InstantiateAsync(string key, Vector3 position, Quaternion rotation, Action<GameObject> onSuccess, Action onFail = null)
     {
         if (string.IsNullOrWhiteSpace(key))
@@ -351,6 +377,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// 释放 LoadAsset 缓存的资源 Handle。不存在或已经无效时安全跳过。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：只有确认所有使用方都不再依赖该 key 对应资源时才能释放。
+    /// </remarks>
     public static void Release(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
@@ -374,6 +403,9 @@ public static class AddressableResourceManager
     /// <summary>
     /// 释放由 Addressables.InstantiateAsync 创建的实例及其引用计数。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：该方法只适用于 Addressables 创建的实例，对象池普通 Instantiate 的对象应走对象池回收。
+    /// </remarks>
     public static void ReleaseInstance(GameObject instance)
     {
         if (instance == null)
@@ -384,6 +416,12 @@ public static class AddressableResourceManager
         Addressables.ReleaseInstance(instance);
     }
 
+    /// <summary>
+    /// 注册一次 InternalId 转换回调，兼容旧版 file 地址并保留 HTTP 地址。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：全局只能注册一次；重复追加回调会让资源地址被多次改写。
+    /// </remarks>
     private static void RegisterInternalIdTransform()
     {
         if (internalIdTransformRegistered)
@@ -395,6 +433,12 @@ public static class AddressableResourceManager
         internalIdTransformRegistered = true;
     }
 
+    /// <summary>
+    /// 把旧 file 模式远端地址转换到客户端同级目录，同时让 HTTP/HTTPS 地址原样通过。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：不能改写 HTTP Catalog 中的 internal id，否则打包客户端会错误访问本地文件。
+    /// </remarks>
     private static string TransformAddressablesRemotePath(IResourceLocation location)
     {
         // HTTP/HTTPS 是当前正式测试模式，必须保持 Catalog 给出的服务器地址不变。
@@ -432,6 +476,12 @@ public static class AddressableResourceManager
         return transformed;
     }
 
+    /// <summary>
+    /// 安全上报 0 到 1 范围内的 Addressables 启动进度和状态文字。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：回调允许为 null；该方法只更新显示，不改变下载和回退流程。
+    /// </remarks>
     private static void Report(Action<float, string> onProgress, float progress, string status)
     {
         // 所有启动阶段都通过同一入口限制进度范围并更新加载界面。

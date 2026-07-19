@@ -64,6 +64,12 @@ public class PickUp : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 判断当前条件是否允许执行 CanSpawnBloodPickup 对应的操作。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 PickUp 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public static bool CanSpawnBloodPickup()
     {
         return ActiveBloodPickups < MaxActiveBloodPickups;
@@ -86,6 +92,12 @@ public class PickUp : MonoBehaviour
             transform.Translate (dir * moveSpeed * Time.deltaTime);
         }
     }
+    /// <summary>
+    /// 处理当前对象进入二维触发器时的交互逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("Player")) 
@@ -93,6 +105,12 @@ public class PickUp : MonoBehaviour
             CollectPickUp(collision);
         }
     }
+    /// <summary>
+    /// 根据拾取物类型应用经验、回血或其它收集效果并回收对象。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 PickUp 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void CollectPickUp(Collider2D collision) 
     {
         switch (pickUpTpye)
@@ -128,6 +146,12 @@ public class PickUp : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 尝试执行 TryBindPlayer，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 PickUp 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private bool TryBindPlayer()
     {
         if (PlayerRuntimeRegistry.TryGetPlayerTransform(out player))

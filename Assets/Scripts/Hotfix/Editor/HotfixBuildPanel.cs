@@ -21,6 +21,12 @@ public sealed class HotfixBuildPanel : EditorWindow
     private string lastBuildTime = "-";
     private string lastError = "-";
 
+    /// <summary>
+    /// 打开 HotfixBuildPanel 管理的目标界面或目录。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 HotfixBuildPanel 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     [MenuItem("Hotfix/Build Panel")]
     public static void Open()
     {
@@ -30,6 +36,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         window.Show();
     }
 
+    /// <summary>
+    /// 绘制仅用于调试或开发构建的即时模式界面。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnGUI()
     {
         // Unity 每次重绘 EditorWindow 时都会调用 OnGUI。
@@ -49,6 +61,12 @@ public sealed class HotfixBuildPanel : EditorWindow
 
     }
 
+    /// <summary>
+    /// SelectableLabel 可以让你直接从面板复制路径和 URL。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void DrawConfig()
     {
         // SelectableLabel 可以让你直接从面板复制路径和 URL。
@@ -59,6 +77,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         EditorGUILayout.SelectableLabel($"Gameplay Label: {AddressablesHotfixSetupUtility.GameplayLabel}", EditorStyles.textField, GUILayout.Height(18f));
     }
 
+    /// <summary>
+    /// 绘制 Lua 同步、Lua 打包和 Addressables 构建的单步按钮。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void DrawSingleStepButtons()
     {
         EditorGUILayout.LabelField("Single Build", EditorStyles.boldLabel);
@@ -83,6 +107,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         EditorGUI.EndDisabledGroup();
     }
 
+    /// <summary>
+    /// 绘制并处理一键构建全部热更新内容的按钮。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void DrawBuildAllButton()
     {
         EditorGUILayout.LabelField("All Build", EditorStyles.boldLabel);
@@ -95,6 +125,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         EditorGUI.EndDisabledGroup();
     }
 
+    /// <summary>
+    /// 绘制服务器目录和测试 URL 等辅助操作按钮。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void DrawUtilityButtons()
     {
         EditorGUILayout.LabelField("Utilities", EditorStyles.boldLabel);
@@ -128,15 +164,13 @@ public sealed class HotfixBuildPanel : EditorWindow
         EditorGUI.EndDisabledGroup();
     }
 
-    // private void DrawStatus()
-    // {
-    //     // 状态显示保持简单，只帮助你确认最近一次执行到哪一步，不额外增加配置文件。
-    //     EditorGUILayout.LabelField("Last Build Status", EditorStyles.boldLabel);
-    //     EditorGUILayout.LabelField("Status", lastBuildStatus);
-    //     EditorGUILayout.LabelField("Time", lastBuildTime);
-    //     EditorGUILayout.LabelField("Last Error", lastError);
-    // }
 
+    /// <summary>
+    /// 单步按钮的统一执行包装。 Func&lt;bool&gt; 的返回值用于告诉面板这个工具步骤是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void RunStep(string stepName, Func<bool> action)
     {
         // 单步按钮的统一执行包装。
@@ -164,6 +198,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         }
     }
 
+    /// <summary>
+    /// 构建 HotfixBuildPanel 中与 BuildAllHotfix 对应的输出内容。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void BuildAllHotfix()
     {
         // 一键构建顺序：
@@ -206,8 +246,6 @@ public sealed class HotfixBuildPanel : EditorWindow
                 // false 表示前面已经执行过 Setup，这里不需要重复配置 Addressables。
                 return;
             }
-
-            PrintTestUrls();
             Debug.Log("[HotfixBuildPanel] Build complete.");
             SetResult(true, "Build All Hotfix complete");
         }
@@ -224,6 +262,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         }
     }
 
+    /// <summary>
+    /// 执行一键流程中的某一个步骤。 如果返回 false，后续步骤会停止，避免基于失败状态继续产出资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private bool RunBuildAllStep(string stepName, Func<bool> action)
     {
         // 执行一键流程中的某一个步骤。
@@ -241,6 +285,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         return true;
     }
 
+    /// <summary>
+    /// 统一更新结果状态，保证 Console 输出和面板显示是一致的。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void SetResult(bool success, string message)
     {
         // 统一更新结果状态，保证 Console 输出和面板显示是一致的。
@@ -254,6 +304,12 @@ public sealed class HotfixBuildPanel : EditorWindow
         }
     }
 
+    /// <summary>
+    /// 打开 HotfixBuildPanel 管理的目标界面或目录。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 HotfixBuildPanel 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void OpenFolder(string path)
     {
         // 先创建目录，再打开目录，保证 RevealInFinder 总是有真实路径可用。
@@ -261,11 +317,5 @@ public sealed class HotfixBuildPanel : EditorWindow
         EditorUtility.RevealInFinder(path);
     }
 
-    private static void PrintTestUrls()
-    {
-        // 这些 URL 可以复制到浏览器里，用来确认本地 HTTP 服务器是否能访问热更文件。
-        Debug.Log($"[HotfixBuildPanel] Lua Manifest: {LuaManifestUrl}");
-        Debug.Log($"[HotfixBuildPanel] Addressables Catalog: {AddressablesCatalogUrl}");
-        Debug.Log($"[HotfixBuildPanel] Start server: python D:/AddressablesServerRoot/start_addressables_server.py");
-    }
+
 }

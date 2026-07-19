@@ -2296,6 +2296,7 @@ MonoBehaviour:
   master: {fileID: 813757735}
   music: {fileID: 1892601735}
   vf: {fileID: 1628466531}
+  showDebugFps: 1
 --- !u!114 &375291412
 MonoBehaviour:
   m_ObjectHideFlags: 0

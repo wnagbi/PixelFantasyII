@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -16,6 +16,12 @@ public class Tornado : MonoBehaviour
     private Vector3 newPos;
     private bool isAttack;
     
+    /// <summary>
+    /// 初始化 Tornado 中与 Init 对应的依赖和状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Tornado 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Init(TornadoController owner)
     {
         weapon = owner;
@@ -45,6 +51,12 @@ public class Tornado : MonoBehaviour
 
         }
     }
+    /// <summary>
+    /// 处理当前对象进入二维触发器时的交互逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("Enemy"))
@@ -58,6 +70,12 @@ public class Tornado : MonoBehaviour
             collision.GetComponent<Enemy>().enemySpeed /= 2;
         }
     }
+    /// <summary>
+    /// 处理当前对象停留在二维触发器内时的持续交互。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerStay2D(Collider2D collision)
     {
         if (collision.CompareTag("Enemy"))
@@ -84,6 +102,12 @@ public class Tornado : MonoBehaviour
             );
         }
     }
+    /// <summary>
+    /// 处理当前对象离开二维触发器时的状态恢复。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.CompareTag("Enemy"))
@@ -97,6 +121,12 @@ public class Tornado : MonoBehaviour
             collision.GetComponent<Enemy>().enemySpeed *= 2;
         }
     }
+    /// <summary>
+    /// 选择玩家附近 moveRange 范围内的随机点作为下一段移动目标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Tornado 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void Attack() 
     {
         // 选择玩家附近 moveRange 范围内的随机点作为下一段移动目标。

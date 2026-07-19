@@ -15,6 +15,12 @@ public class AudioController : MonoBehaviour
         instance = this;
     }
 
+    /// <summary>
+    /// 播放单个音效。当前实现会覆盖 SESource.clip，所以同一时刻只播放一个 SE。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 AudioController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void PlaySE(AudioClip audio) 
     {
         // 播放单个音效。当前实现会覆盖 SESource.clip，所以同一时刻只播放一个 SE。

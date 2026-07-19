@@ -18,6 +18,12 @@ public class TornadoController : HotfixWeaponController
     {
         base.Start();
     }
+    /// <summary>
+    /// 根据最新数据刷新 TornadoController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TornadoController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Refresh()
     {
         tornado.Clear();
@@ -32,6 +38,12 @@ public class TornadoController : HotfixWeaponController
         
     }
 
+    /// <summary>
+    /// 武器 Prefab 实例化后向实体注入所属 Controller。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TornadoController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
     {
         if (instance != null && instance.TryGetComponent(out Tornado tornadoComponent))
@@ -40,6 +52,12 @@ public class TornadoController : HotfixWeaponController
         }
     }
 
+    /// <summary>
+    /// 暴露给 Lua：升级或配置变化后销毁旧龙卷风并重新生成。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TornadoController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void RebuildTornadoes()
     {
         // 暴露给 Lua：升级或配置变化后销毁旧龙卷风并重新生成。
@@ -54,6 +72,12 @@ public class TornadoController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 在 Lua 模块和 Addressables Prefab 准备完成后初始化具体武器表现。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TornadoController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void OnHotfixStartReady()
     {
         RebuildTornadoes();
@@ -83,6 +107,12 @@ public class TornadoController : HotfixWeaponController
         //}
             
     }
+    /// <summary>
+    /// 龙卷风攻击行为优先由 Lua 控制。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TornadoController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Attack()
     {
         // 龙卷风攻击行为优先由 Lua 控制。
@@ -101,6 +131,12 @@ public class TornadoController : HotfixWeaponController
         //isAttack = true;
             
     }
+    /// <summary>
+    /// 升级优先交给 Lua，Lua 失败时使用 C# 默认升级表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TornadoController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void levelUp()
     {
         // 升级优先交给 Lua，Lua 失败时使用 C# 默认升级表。
@@ -145,6 +181,12 @@ public class TornadoController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 默认 Lua 模块路径。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TornadoController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override string GetDefaultLuaModuleName()
     {
         // 默认 Lua 模块路径。

@@ -11,6 +11,12 @@ public class Knife : MonoBehaviour
         weapon = transform.parent.parent.GetComponent<KnifeController>();
     }
 
+    /// <summary>
+    /// 处理当前对象进入二维触发器时的交互逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         // 只处理带 Enemy 标签且确实挂有 Enemy 组件的碰撞对象。

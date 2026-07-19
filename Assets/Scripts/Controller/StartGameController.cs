@@ -15,6 +15,12 @@ public class StartGameController : MonoBehaviour
         // 地图选择按钮通过 instance 写入目标场景名。
         instance = this;
     }
+    /// <summary>
+    /// 没选地图时不切场景。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 StartGameController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Tp() 
     {
         // 没选地图时不切场景。

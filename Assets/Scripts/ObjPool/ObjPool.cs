@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 [System.Serializable]
@@ -19,6 +19,12 @@ public class ObjPool
     // 该对象池创建过的所有对象，用于判断 ReturnObj 是否属于当前池。
     public List<GameObject> allObjects = new List<GameObject>();
 
+    /// <summary>
+    /// 没有 prefab 时不初始化，避免空引用。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ObjPool 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Initiliza() 
     {
         // 没有 prefab 时不初始化，避免空引用。
@@ -29,6 +35,12 @@ public class ObjPool
         PreWarmPool(size);
     }
 
+    /// <summary>
+    /// 设置 ObjPool 中与 SetPrefab 对应的状态或数据。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ObjPool 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void SetPrefab(GameObject newPrefab)
     {
         if (newPrefab != null)
@@ -37,6 +49,12 @@ public class ObjPool
         }
     }
 
+    /// <summary>
+    /// 清理旧对象并使用当前 Prefab 重新预热对象池。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ObjPool 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Rewarm()
     {
         for (int i = allObjects.Count - 1; i >= 0; i--)
@@ -59,7 +77,13 @@ public class ObjPool
         PreWarmPool(size);
     }
 
-    private void PreWarmPool(int num) //预热
+    /// <summary>
+    /// 提前创建一批 inactive 对象，减少战斗中 Instantiate 卡顿。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ObjPool 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
+    private void PreWarmPool(int num)
     {
         // 提前创建一批 inactive 对象，减少战斗中 Instantiate 卡顿。
         for (int i = 0; i < num; i++) 
@@ -67,7 +91,13 @@ public class ObjPool
             CreateNewObj();
         }
     }
-    public GameObject GetObj() //获取对象
+    /// <summary>
+    /// 优先复用已经回收的对象。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ObjPool 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public GameObject GetObj()
     {
         // 优先复用已经回收的对象。
         if (inactiveObjects.Count > 0) 
@@ -80,6 +110,12 @@ public class ObjPool
         ExpandPool();
         return GetObj();
     }
+    /// <summary>
+    /// 归还或返回 ObjPool 中与 ReturnObj 对应的对象。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ObjPool 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ReturnObj(GameObject obj) 
     {
         // 只允许回收本池创建的对象，避免不同池之间混淆。
@@ -93,6 +129,12 @@ public class ObjPool
         if(parentTransform != null) 
             obj.transform.SetParent(parentTransform); 
     }
+    /// <summary>
+    /// 新建对象默认 inactive，等 GetObj 时再启用。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ObjPool 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private GameObject CreateNewObj() 
     {
         // 新建对象默认 inactive，等 GetObj 时再启用。
@@ -102,11 +144,23 @@ public class ObjPool
         inactiveObjects.Push(newObj);
         return newObj;
     }
-    private void ExpandPool() //扩充对象池
+    /// <summary>
+    /// 按配置数量批量扩容。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ObjPool 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
+    private void ExpandPool()
     {
         // 按配置数量批量扩容。
         PreWarmPool(expandSize);
     }
+    /// <summary>
+    /// 销毁该池创建的所有对象，通常用于场景卸载或彻底重置。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ObjPool 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Clear() 
     {
         // 销毁该池创建的所有对象，通常用于场景卸载或彻底重置。

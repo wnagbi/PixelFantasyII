@@ -35,6 +35,12 @@ public class Scythe : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 处理当前对象进入二维触发器时的交互逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (!collision.CompareTag("Enemy") || weapon == null || !collision.TryGetComponent(out Enemy enemy))
@@ -54,6 +60,12 @@ public class Scythe : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// 飞行时间结束后让 Update 销毁整个方向根节点。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Scythe 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private IEnumerator Timer(float timer)
     {
         // 飞行时间结束后让 Update 销毁整个方向根节点。

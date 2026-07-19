@@ -42,6 +42,12 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 尝试执行 TryInitialize，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 MapGenerator 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private bool TryInitialize()
     {
         if (tileMap == null)
@@ -65,7 +71,13 @@ public class MapGenerator : MonoBehaviour
         initialized = true;
         return true;
     }
-    private void GenerateTiles() // Generate Tiles
+    /// <summary>
+    /// 生成 MapGenerator 中与 GenerateTiles 对应的内容。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 MapGenerator 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
+    private void GenerateTiles()
     {
         // 以玩家所在格子为中心，把 renderDistance 范围内缺失的 Tile 补上。
         Vector3Int playerCell = tileMap.WorldToCell(player.position);
@@ -85,7 +97,13 @@ public class MapGenerator : MonoBehaviour
             }
         }
     }
-    private void DeleteTiles()  //Delete Tiles
+    /// <summary>
+    /// 遍历当前 Tilemap 已有范围，删除超过渲染距离的格子，控制 Tile 数量。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 MapGenerator 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
+    private void DeleteTiles()
     {
         // 遍历当前 Tilemap 已有范围，删除超过渲染距离的格子，控制 Tile 数量。
         Vector3Int playerCell = tileMap.WorldToCell(player.position);

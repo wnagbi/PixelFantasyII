@@ -35,7 +35,6 @@
   使用 `GameEvents` 广播血量、经验、击杀数、分数、技能解锁和任务进度变化，使用 `RunData` 管理本局击杀数和生存时间，减少 UI 每帧轮询。
 
 - **EnemyManager 空间分区寻敌系统**
-
   使用“敌人注册表 + 固定网格空间分区”统一管理寻敌。敌人从对象池启用时注册、回收时注销，空间网格在首次查询时按帧懒重建，同一帧内的多次寻敌共用查询数据。范围寻敌只扫描目标附近的网格，并使用距离平方筛选最近目标，减少大量敌人场景下的全列表遍历；同时统一过滤死亡、禁用或已经回收的敌人。武器和 Lua 规则继续通过 `GetNearestEnemy`、`GetNearestEnemyInRange`、`GetRandomEnemy` 等稳定接口获取目标。
 
 - **输入设备状态管理**  
@@ -142,8 +141,3 @@ Lua 热更新 manifest 地址示例：
 http://127.0.0.1:18080/LuaRemote/lua_manifest.json
 ```
 
-测试思路：
-
-- 修改 Lua 文件后重新构建 Lua 热更新 zip，不重新打包客户端，重启游戏验证玩法逻辑变化。
-- 修改 Addressable Prefab、Sprite 或 VFX 后重新 Build Addressables，不重新打包客户端，重启游戏验证资源变化。
-- 关闭服务器后启动游戏，验证 fallback 是否正常进入游戏。

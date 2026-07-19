@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Localization;
@@ -32,6 +32,12 @@ public class SelectMapController : MonoBehaviour
         nameString.StringChanged -= OnScoreLabelChanged;
     }
 
+    /// <summary>
+    /// 根据最新数据刷新 SelectMapController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SelectMapController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void RefreshScore(int score)
     {
         // 这里不再每帧读取 JSON，只有进入界面或分数变化时刷新。
@@ -41,6 +47,12 @@ public class SelectMapController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 分数标签本地化变化时使用存档总分重新渲染。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SelectMapController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnScoreLabelChanged(string localizedText)
     {
         scoreLabel = localizedText;

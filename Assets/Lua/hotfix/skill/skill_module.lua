@@ -4,7 +4,8 @@ local skill_config = require("config.skill_config")
 
 local M = {}
 
--- 返回 true 表示该技能 ID 已由 Lua 接管，C# 不再执行默认释放分支。
+-- 用途：根据技能 ID 执行磁铁、狂怒或次元斩的可热更新释放规则。
+-- 使用注意：返回 true 表示 Lua 已接管且 C# 不执行默认分支；必须先调用 host:CanUseSkill 检查条件。
 function M.OnSkill(host, skillId)
     if skillId == 1 then
         -- 磁铁：由 C# 执行全场拾取 UnityEvent。

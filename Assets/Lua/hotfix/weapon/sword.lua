@@ -1,11 +1,14 @@
 -- 飞剑热更规则。目标选择和逐帧追踪由 SwordController / EnemyManager 负责。
 local M = {}
 
+-- 用途：保留飞剑攻击钩子，实际追踪和移动继续由 SwordController 执行。
+-- 使用注意：当前不应在这里周期性生成飞剑，避免与 C# 重建逻辑重复。
 function M.OnAttack(host)
     -- 飞剑没有周期性生成攻击，移动仍由 C# Host 的 Update 处理。
 end
 
--- 调整速度、数量和伤害，最后重建飞剑并重新分配有效目标。
+-- 用途：调整飞剑速度、数量和伤害，并重建飞剑重新分配有效目标。
+-- 使用注意：目标选择统一交给 EnemyManager；不要在 Lua 中缓存对象池敌人引用。
 function M.OnLevelUp(host)
     local level = host.level
     if level == 0 then

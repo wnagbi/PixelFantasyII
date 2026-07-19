@@ -49,6 +49,12 @@ public static class AddressablesHotfixSetupUtility
         { "Assets/Prefabs/Potion.prefab", "pickup/blood" },
     };
 
+    /// <summary>
+    /// 保留旧菜单入口，同时把成功/失败逻辑交给 Try 方法，方便面板复用。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     [MenuItem("Hotfix/Addressables/Setup HTTP Remote Gameplay Assets")]
     public static void SetupHttpRemoteGameplayAssets()
     {
@@ -56,6 +62,12 @@ public static class AddressablesHotfixSetupUtility
         TrySetupHttpRemoteGameplayAssets();
     }
 
+    /// <summary>
+    /// 尝试执行 TrySetupHttpRemoteGameplayAssets，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static bool TrySetupHttpRemoteGameplayAssets()
     {
         try
@@ -123,11 +135,6 @@ public static class AddressablesHotfixSetupUtility
             EditorUtility.SetDirty(bundledSchema);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-
-            Debug.Log($"[AddressablesHotfixSetup] Setup HTTP remote complete. Build path: {RemoteBuildPath}");
-            Debug.Log($"[AddressablesHotfixSetup] Load path: {RemoteLoadPath}");
-            Debug.Log($"[AddressablesHotfixSetup] Start server in {ServerRoot}: python D:/AddressablesServerRoot/start_addressables_server.py");
-            Debug.Log($"[AddressablesHotfixSetup] Test URL: {TestUrl}");
             return true;
         }
         catch (Exception ex)
@@ -138,6 +145,12 @@ public static class AddressablesHotfixSetupUtility
         }
     }
 
+    /// <summary>
+    /// 构建 AddressablesHotfixSetupUtility 中与 BuildHttpRemoteContent 对应的输出内容。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     [MenuItem("Hotfix/Addressables/Build HTTP Remote Content")]
     public static void BuildHttpRemoteContent()
     {
@@ -145,12 +158,24 @@ public static class AddressablesHotfixSetupUtility
         TryBuildHttpRemoteContent();
     }
 
+    /// <summary>
+    /// 尝试执行 TryBuildHttpRemoteContent，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static bool TryBuildHttpRemoteContent()
     {
         // 单步构建默认先重新应用 HTTP 远端配置，更安全。
         return TryBuildHttpRemoteContent(true);
     }
 
+    /// <summary>
+    /// 尝试执行 TryBuildHttpRemoteContent，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static bool TryBuildHttpRemoteContent(bool setupBeforeBuild)
     {
         try
@@ -170,8 +195,6 @@ public static class AddressablesHotfixSetupUtility
                 return false;
             }
 
-            Debug.Log($"[AddressablesHotfixSetup] Addressables build complete. Output: {ServerRoot}/AddressablesRemote");
-            Debug.Log($"[AddressablesHotfixSetup] Test URL: {TestUrl}");
             return true;
         }
         catch (Exception ex)
@@ -182,6 +205,12 @@ public static class AddressablesHotfixSetupUtility
         }
     }
 
+    /// <summary>
+    /// Addressables 通过 GUID 管理资源，因此先把工程路径解析成 GUID。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 AddressablesHotfixSetupUtility 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void AddOrMoveEntry(AddressableAssetSettings settings, AddressableAssetGroup group, string assetPath, string address)
     {
         // Addressables 通过 GUID 管理资源，因此先把工程路径解析成 GUID。
@@ -199,6 +228,12 @@ public static class AddressablesHotfixSetupUtility
         entry.SetLabel(GameplayLabel, true, true, true);
     }
 
+    /// <summary>
+    /// Addressables schema 字段应引用 Profile 变量，而不是直接写死字符串。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 AddressablesHotfixSetupUtility 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void SetProfileReference(AddressableAssetSettings settings, ProfileValueReference reference, string variableName)
     {
         // Addressables schema 字段应引用 Profile 变量，而不是直接写死字符串。

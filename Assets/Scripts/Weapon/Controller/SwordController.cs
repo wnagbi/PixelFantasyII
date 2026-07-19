@@ -17,6 +17,12 @@ public class SwordController : HotfixWeaponController
         base.Start();
     }
 
+    /// <summary>
+    /// 根据最新数据刷新 SwordController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SwordController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Refresh()
     {
         InitializeWeapon();
@@ -26,6 +32,12 @@ public class SwordController : HotfixWeaponController
         }
     }
 
+    /// <summary>
+    /// 当前飞剑攻击逻辑是 Lua 优先；没有 Lua 时这里不会额外执行父类攻击。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SwordController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Attack()
     {
         // 当前飞剑攻击逻辑是 Lua 优先；没有 Lua 时这里不会额外执行父类攻击。
@@ -72,6 +84,12 @@ public class SwordController : HotfixWeaponController
         }
     }
 
+    /// <summary>
+    /// 为指定飞剑分配当前最近的有效敌人目标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SwordController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void AssignTarget(Transform swordTransform)
     {
         if (swordTransform == null)
@@ -88,6 +106,12 @@ public class SwordController : HotfixWeaponController
         }
     }
 
+    /// <summary>
+    /// 判断 SwordController 当前是否满足 IsValidTarget 对应的状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SwordController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private bool IsValidTarget(Transform target)
     {
         // 飞剑保存的是 Transform，所以这里再反查 Enemy 状态，防止锁定死亡/回收对象。
@@ -100,11 +124,23 @@ public class SwordController : HotfixWeaponController
         return enemy != null && enemy.live && !enemy.isDie && enemy.Health > 0f;
     }
 
+    /// <summary>
+    /// 把飞剑朝当前有效目标移动。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SwordController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void MoveObject(Transform swordTransform, Transform target)
     {
         swordTransform.position = Vector3.MoveTowards(swordTransform.position, target.position, speed * Time.deltaTime);
     }
 
+    /// <summary>
+    /// 让飞剑朝向当前移动目标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SwordController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void RotationSword(Transform swordTransform, Transform target)
     {
         Vector2 dir = swordTransform.position - target.position;
@@ -113,6 +149,12 @@ public class SwordController : HotfixWeaponController
         swordTransform.rotation = Quaternion.RotateTowards(swordTransform.rotation, targetRotation, turnSpeed * Time.deltaTime);
     }
 
+    /// <summary>
+    /// 根据当前数量创建飞剑并为每把飞剑分配目标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SwordController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void SwordGenerator()
     {
         GameObject sourcePrefab = GetRuntimePrefab(prefab);
@@ -133,6 +175,12 @@ public class SwordController : HotfixWeaponController
         swords.Add(sword);
     }
 
+    /// <summary>
+    /// 武器 Prefab 实例化后向实体注入所属 Controller。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SwordController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
     {
         if (instance != null && instance.TryGetComponent(out Sword swordComponent))
@@ -141,6 +189,12 @@ public class SwordController : HotfixWeaponController
         }
     }
 
+    /// <summary>
+    /// 暴露给 Lua：升级后销毁旧飞剑并按当前 count 重新生成。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SwordController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void RebuildSwords()
     {
         // 暴露给 Lua：升级后销毁旧飞剑并按当前 count 重新生成。
@@ -156,11 +210,23 @@ public class SwordController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 在 Lua 模块和 Addressables Prefab 准备完成后初始化具体武器表现。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SwordController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void OnHotfixStartReady()
     {
         RebuildSwords();
     }
 
+    /// <summary>
+    /// 升级优先交给 Lua，Lua 失败时使用下面的 C# 默认升级表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SwordController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void levelUp()
     {
         // 升级优先交给 Lua，Lua 失败时使用下面的 C# 默认升级表。
@@ -210,6 +276,12 @@ public class SwordController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 默认 Lua 模块路径。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SwordController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override string GetDefaultLuaModuleName()
     {
         // 默认 Lua 模块路径。

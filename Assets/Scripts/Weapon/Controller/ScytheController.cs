@@ -15,6 +15,12 @@ public class ScytheController : HotfixWeaponController
         base.Start();
     }
 
+    /// <summary>
+    /// Lua 攻击成功时直接返回；否则使用原 C# 环形发射逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ScytheController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Attack()
     {
         // Lua 攻击成功时直接返回；否则使用原 C# 环形发射逻辑。
@@ -37,11 +43,23 @@ public class ScytheController : HotfixWeaponController
             scythe.Rotate(dir);
         }
     }
+    /// <summary>
+    /// 归还或返回 ScytheController 中与 returnTimer 对应的对象。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ScytheController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public float returnTimer()
     {
         return timer;
     }
 
+    /// <summary>
+    /// 升级优先走 Lua，失败时保留 C# 默认升级表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ScytheController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void levelUp()
     {
         // 升级优先走 Lua，失败时保留 C# 默认升级表。
@@ -83,6 +101,12 @@ public class ScytheController : HotfixWeaponController
 
     }
 
+    /// <summary>
+    /// 默认 Lua 模块路径。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ScytheController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override string GetDefaultLuaModuleName()
     {
         // 默认 Lua 模块路径。

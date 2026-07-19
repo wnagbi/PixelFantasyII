@@ -59,6 +59,12 @@ public class ExpController : MonoBehaviour
         ProcessExperience(data.Exp, true);
     }
 
+    /// <summary>
+    /// 升级规则优先交给 Lua。Lua 返回成功时，不再执行 C# 默认升级逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ExpController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void LevelUp()
     {
         // 升级规则优先交给 Lua。Lua 返回成功时，不再执行 C# 默认升级逻辑。
@@ -73,6 +79,12 @@ public class ExpController : MonoBehaviour
         DefaultLevelUp();
     }
 
+    /// <summary>
+    /// Lua 未接管时的默认升级：扣除当前等级经验，等级 +1。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ExpController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void DefaultLevelUp()
     {
         // Lua 未接管时的默认升级：扣除当前等级经验，等级 +1。
@@ -86,6 +98,12 @@ public class ExpController : MonoBehaviour
         PlayerData.getInstance().Level = currentLevel;
     }
 
+    /// <summary>
+    /// 经验属性变化时进入连续升级和经验事件处理流程。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ExpController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnExperienceChanged(int experience)
     {
         if (!initialized)
@@ -97,6 +115,12 @@ public class ExpController : MonoBehaviour
         ProcessExperience(experience, false);
     }
 
+    /// <summary>
+    /// LevelUp 会把剩余经验重新写回 PlayerData.Exp，因此用保护避免事件重入。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ExpController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void ProcessExperience(int experience, bool forceReport)
     {
         // LevelUp 会把剩余经验重新写回 PlayerData.Exp，因此用保护避免事件重入。
@@ -148,6 +172,12 @@ public class ExpController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 向调用方报告 ExpController 当前流程的状态或进度。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 ExpController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void ReportExpChanged(bool force)
     {
         if (expLevels == null || expLevels.Count == 0)

@@ -53,6 +53,12 @@ public static class GameSettingsStore
         }
     }
 
+    /// <summary>
+    /// 加载 GameSettingsStore 中与 Load 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static void Load()
     {
         try
@@ -87,6 +93,12 @@ public static class GameSettingsStore
         }
     }
 
+    /// <summary>
+    /// 保存 GameSettingsStore 当前维护的数据。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static void Save()
     {
         // 理论上 current 应该已经由 Load 创建；这里再兜底一次。
@@ -114,6 +126,12 @@ public static class GameSettingsStore
         }
     }
 
+    /// <summary>
+    /// 重建默认数据、规范化字段并覆盖保存本地 JSON。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static void ResetToDefault()
     {
         // 重建默认设置并立刻写入 settings.json。
@@ -121,6 +139,12 @@ public static class GameSettingsStore
         Save();
     }
 
+    /// <summary>
+    /// 默认分辨率使用当前屏幕分辨率。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 GameSettingsStore 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static GameSettingsData CreateDefault()
     {
         // 默认分辨率使用当前屏幕分辨率。
@@ -139,6 +163,12 @@ public static class GameSettingsStore
         };
     }
 
+    /// <summary>
+    /// 修正损坏或旧版本字段，返回 true 表示需要重新保存。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 GameSettingsStore 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static bool Normalize()
     {
         // 修正损坏或旧版本字段，返回 true 表示需要重新保存。

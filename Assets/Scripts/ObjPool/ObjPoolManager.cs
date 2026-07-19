@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -24,6 +24,12 @@ public class ObjPoolManager : MonoBehaviour
             Destroy(gameObject);
          }
     }
+    /// <summary>
+    /// 初始化并预热 Inspector 中配置的全部对象池。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：只在管理器 Awake 中执行一次；重复预热会额外创建对象。
+    /// </remarks>
     private void InitializeAllPools() 
     {
         // 场景启动时预热所有对象池。
@@ -32,6 +38,12 @@ public class ObjPoolManager : MonoBehaviour
             pool.Initiliza();
         }
     }
+    /// <summary>
+    /// 按 poolName 从对应对象池取出并启用一个对象。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：池名不存在时返回 null；调用方必须判空并保证名称与 Lua 配置一致。
+    /// </remarks>
     public GameObject GetObj(string name) 
     {
         // 按 poolName 查找对象池并取出一个对象。
@@ -41,6 +53,12 @@ public class ObjPoolManager : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// 查找对象所属的池并将其禁用、归还。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：对象必须由本管理器中的池创建；同一对象不能重复归还。
+    /// </remarks>
     public void ReturnObj(GameObject obj) 
     {
         // 找到这个对象所属的对象池，然后交给该池回收。
@@ -54,6 +72,12 @@ public class ObjPoolManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 预加载 Addressable Prefab，并在成功后替换指定池的默认 Prefab。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：这是协程；失败时保留 Inspector fallback，不应阻断其它池加载。
+    /// </remarks>
     public IEnumerator PreloadAddressablePrefab(string poolName, string prefabKey)
     {
         if (string.IsNullOrWhiteSpace(poolName) || string.IsNullOrWhiteSpace(prefabKey))
@@ -74,6 +98,12 @@ public class ObjPoolManager : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// 用已加载 Prefab 替换目标对象池模板并重新预热。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：Rewarm 会清理旧池对象；应在正式刷怪和掉落开始前调用。
+    /// </remarks>
     public bool ReplacePoolPrefab(string poolName, GameObject prefab)
     {
         if (prefab == null)
@@ -93,6 +123,12 @@ public class ObjPoolManager : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 读取 config.pool_config 并依次预加载全部可热更新对象池 Prefab。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：Lua 配置缺失或单项无效时使用 Inspector fallback；LuaTable 用完必须 Dispose。
+    /// </remarks>
     private IEnumerator PreloadConfiguredAddressablePools()
     {
         // 对象池 Addressables 预加载现在完全由 Lua 配置驱动。
@@ -158,6 +194,12 @@ public class ObjPoolManager : MonoBehaviour
         public readonly string poolName;
         public readonly string prefabKey;
 
+        /// <summary>
+        /// 创建一条已校验的对象池名称与 Addressable key 配置。
+        /// </summary>
+        /// <remarks>
+        /// 使用注意：仅作为协程加载前的临时值，不持有 LuaTable 或 Addressables Handle。
+        /// </remarks>
         public PoolAddressableConfig(string poolName, string prefabKey)
         {
             this.poolName = poolName;

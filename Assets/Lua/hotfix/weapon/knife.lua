@@ -1,14 +1,16 @@
 -- 环绕刀热更规则。Lua 修改旋转和成长参数，C# 负责碰撞与统一伤害结算。
 local M = {}
 
--- 环绕刀是持续表现型武器，每次调用通过旋转根节点更新刀阵方向。
+-- 用途：按速度和 deltaTime 持续旋转环绕刀根节点。
+-- 使用注意：该入口可能逐帧执行，不要在这里反复重建刀阵或加载资源。
 function M.OnAttack(host)
     host:ResetCooldown()
     local rotation = host.rotationPoint.transform.rotation.eulerAngles
     host.rotationPoint.transform.rotation = CS.UnityEngine.Quaternion.Euler(0, 0, rotation.z + host.speed * CS.UnityEngine.Time.deltaTime)
 end
 
--- 升级后调整伤害、数量或转速，并重建刀阵以应用最新数量。
+-- 用途：调整环绕刀伤害、数量和转速，并重建刀阵应用最新配置。
+-- 使用注意：每次调用只推进一个等级；重建必须通过 host:RebuildKnives 保持 Prefab 注入流程。
 function M.OnLevelUp(host)
     local level = host.level
     if level == 0 then

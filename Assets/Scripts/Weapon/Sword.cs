@@ -13,12 +13,24 @@ public class Sword : MonoBehaviour
         enemy = target != null ? target.transform : null;
     }
 
+    /// <summary>
+    /// 生成时注入 Controller，用于读取伤害等武器数值。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Sword 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Init(SwordController owner)
     {
         // 生成时注入 Controller，用于读取伤害等武器数值。
         weapon = owner;
     }
 
+    /// <summary>
+    /// 处理当前对象进入二维触发器时的交互逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (!collision.CompareTag("Enemy") || weapon == null || !collision.TryGetComponent(out Enemy targetEnemy))

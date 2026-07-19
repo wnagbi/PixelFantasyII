@@ -25,6 +25,12 @@ public class WeaponController : MonoBehaviour
         InitializeWeapon();
     }
 
+    /// <summary>
+    /// 读取同物体上的 Weapon 数据组件，并把当前冷却设为初始 CD。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected void InitializeWeapon()
     {
         // 读取同物体上的 Weapon 数据组件，并把当前冷却设为初始 CD。
@@ -42,14 +48,32 @@ public class WeaponController : MonoBehaviour
             CDTime();
 
     }
+    /// <summary>
+    /// 冷却期间的行为钩子。环绕类武器会在这里旋转。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected virtual void CDTime() 
     {
         // 冷却期间的行为钩子。环绕类武器会在这里旋转。
     }
+    /// <summary>
+    /// 根据最新数据刷新 WeaponController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected virtual void Refresh() 
     {
         // 数量/等级变化后重建武器表现的钩子。
     }
+    /// <summary>
+    /// 默认攻击只重置冷却；具体武器负责真正生成子弹或执行攻击。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected virtual void Attack() 
     {
         // 默认攻击只重置冷却；具体武器负责真正生成子弹或执行攻击。

@@ -17,6 +17,12 @@ public class FunnelController : HotfixWeaponController
     {
         base.Start();
     }
+    /// <summary>
+    /// Lua 攻击成功时不执行 C# 默认激光发射。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 FunnelController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Attack()
     {
         // Lua 攻击成功时不执行 C# 默认激光发射。
@@ -28,10 +34,22 @@ public class FunnelController : HotfixWeaponController
         base.Attack();
         ShootLaser(funnels);
     }
+    /// <summary>
+    /// 累加武器冷却计时并在达到间隔后允许下一次攻击。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 FunnelController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void CDTime()
     {
         Rotation();
     }
+    /// <summary>
+    /// 根据最新数据刷新 FunnelController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 FunnelController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Refresh()
     {
         funnels.Clear();
@@ -51,10 +69,22 @@ public class FunnelController : HotfixWeaponController
 
         }
     }
+    /// <summary>
+    /// 按当前速度持续旋转浮游炮阵列。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 FunnelController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Rotation() 
     {
         rotationPoint.transform.rotation = Quaternion.Euler(0f, 0f, rotationPoint.transform.rotation.eulerAngles.z + (speed * Time.deltaTime));
     }
+    /// <summary>
+    /// 让当前浮游炮列表中的每个有效实体生成激光。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 FunnelController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ShootLaser(List<GameObject> objs) 
     {
         for (int i = 0; i < objs.Count; i++) 
@@ -64,6 +94,12 @@ public class FunnelController : HotfixWeaponController
         
     }
 
+    /// <summary>
+    /// 武器 Prefab 实例化后向实体注入所属 Controller。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 FunnelController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void OnRuntimePrefabInstantiated(GameObject instance, bool isSecondaryPrefab)
     {
         if (isSecondaryPrefab && instance != null && instance.TryGetComponent(out Laser laserComponent))
@@ -72,6 +108,12 @@ public class FunnelController : HotfixWeaponController
         }
     }
 
+    /// <summary>
+    /// 暴露给 Lua：升级后清空并按当前 count 重建浮游炮。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 FunnelController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void RebuildFunnels()
     {
         // 暴露给 Lua：升级后清空并按当前 count 重建浮游炮。
@@ -79,11 +121,23 @@ public class FunnelController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 在 Lua 模块和 Addressables Prefab 准备完成后初始化具体武器表现。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 FunnelController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void OnHotfixStartReady()
     {
         RebuildFunnels();
     }
 
+    /// <summary>
+    /// 升级优先交给 Lua，Lua 失败时走 C# 默认升级表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 FunnelController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void levelUp()
     {
         // 升级优先交给 Lua，Lua 失败时走 C# 默认升级表。
@@ -128,6 +182,12 @@ public class FunnelController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 默认 Lua 模块路径。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 FunnelController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override string GetDefaultLuaModuleName()
     {
         // 默认 Lua 模块路径。

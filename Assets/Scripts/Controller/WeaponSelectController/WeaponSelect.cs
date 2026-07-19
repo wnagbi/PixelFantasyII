@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -45,7 +45,13 @@ public class WeaponSelect : MonoBehaviour
         describleString.StringChanged -= OnDescriptionStringChanged;
     }
 
-    public void DescribleGenerator() //Updata Describle of Selection Weapoin
+    /// <summary>
+    /// 根据武器状态和本地化内容刷新选择卡名称与描述。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelect 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void DescribleGenerator()
     {
         if (weapon == null)
         {
@@ -66,13 +72,25 @@ public class WeaponSelect : MonoBehaviour
         describleString.RefreshString();
 
     }
-    public void ChangeGet() //Change Weapon whether get
+    /// <summary>
+    /// 标记该武器已经获得。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelect 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void ChangeGet()
     {
         // 标记该武器已经获得。
         weapon.isGet = true;
     }
 
-    public void LevelUp() //Judge which weapon want to select to level up
+    /// <summary>
+    /// 根据选择卡上的 weaponType，把选择映射到 WeaponList 中的武器索引。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelect 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void LevelUp()
     {
         // 根据选择卡上的 weaponType，把选择映射到 WeaponList 中的武器索引。
         switch (weaponType) 
@@ -105,6 +123,12 @@ public class WeaponSelect : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 初始化 WeaponSelect 中与 Initialize 对应的依赖和状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelect 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Initialize(WeaponList list)
     {
         weaponList = list;
@@ -112,6 +136,12 @@ public class WeaponSelect : MonoBehaviour
         DescribleGenerator();
     }
 
+    /// <summary>
+    /// 从玩家武器列表绑定当前选择卡对应的武器数据。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponSelect 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void BindWeapon()
     {
         if (weaponList == null || weaponList.weaponList == null || id <= 0 || id > weaponList.weaponList.Length)
@@ -123,6 +153,12 @@ public class WeaponSelect : MonoBehaviour
         weapon = weaponObject != null ? weaponObject.GetComponent<Weapon>() : null;
     }
 
+    /// <summary>
+    /// 本地化名称变化时刷新当前 UI 文本。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponSelect 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnNameStringChanged(string localizedText)
     {
         if (nameBox != null)
@@ -131,6 +167,12 @@ public class WeaponSelect : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 本地化描述变化时刷新当前 UI 文本。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponSelect 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnDescriptionStringChanged(string localizedText)
     {
         if (describle != null)

@@ -18,6 +18,12 @@ public class ButtonControl : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// 播放按钮音效。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 ButtonControl 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void WaitAnimator() 
     {
             // 播放按钮音效。

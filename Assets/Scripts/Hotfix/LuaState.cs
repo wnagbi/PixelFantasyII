@@ -19,6 +19,12 @@ public class LuaState : IState
     private LuaFunction onFixedUpdate;
     private LuaFunction onExit;
 
+    /// <summary>
+    /// luaModule 例如 hotfix.enemy.enemy_state，stateName 例如 EnemyMove。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 LuaState 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public LuaState(object owner, string luaModule, string stateName)
     {
         // luaModule 例如 hotfix.enemy.enemy_state，stateName 例如 EnemyMove。
@@ -28,30 +34,60 @@ public class LuaState : IState
         LoadModule();
     }
 
+    /// <summary>
+    /// 进入当前状态并应用该状态的初始表现。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由状态机按固定顺序调用，切换状态时必须保证 OnExit 与 OnEnter 成对执行。
+    /// </remarks>
     public void OnEnter()
     {
         // 转发 IState.OnEnter -> Lua EnemyMove.OnEnter(owner)。
         Call(onEnter);
     }
 
+    /// <summary>
+    /// 逐帧执行当前状态的逻辑更新。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由状态机按固定顺序调用，切换状态时必须保证 OnExit 与 OnEnter 成对执行。
+    /// </remarks>
     public void OnUpData()
     {
         // 项目原接口拼写是 OnUpData，这里保持接口不变，转发到 Lua 的 OnUpdate。
         Call(onUpdate);
     }
 
+    /// <summary>
+    /// 在固定时间步执行当前状态的物理更新。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由状态机按固定顺序调用，切换状态时必须保证 OnExit 与 OnEnter 成对执行。
+    /// </remarks>
     public void OnFixUpData()
     {
         // 转发固定帧逻辑，通常放物理移动或碰撞相关状态判断。
         Call(onFixedUpdate);
     }
 
+    /// <summary>
+    /// 退出当前状态并清理该状态留下的临时效果。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由状态机按固定顺序调用，切换状态时必须保证 OnExit 与 OnEnter 成对执行。
+    /// </remarks>
     public void OnExit()
     {
         // 离开状态时通知 Lua。
         Call(onExit);
     }
 
+    /// <summary>
+    /// 加载 LuaState 中与 LoadModule 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaState 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void LoadModule()
     {
         // 没有模块名时不接 Lua，外层状态机会根据情况回退。
@@ -98,6 +134,12 @@ public class LuaState : IState
         }
     }
 
+    /// <summary>
+    /// 每个状态回调统一从这里进入，Lua 报错只输出 Warning。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaState 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void Call(LuaFunction func)
     {
         // 每个状态回调统一从这里进入，Lua 报错只输出 Warning。

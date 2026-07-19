@@ -30,12 +30,24 @@ public static class LuaHotfixRemoteUpdater
     private static readonly string StagingRoot = Path.Combine(Application.persistentDataPath, "LuaHotfixStaging");
     private static readonly string BackupRoot = Path.Combine(Application.persistentDataPath, "LuaHotfixBackup");
 
+    /// <summary>
+    /// 检查并处理 LuaHotfixRemoteUpdater 中与 CheckAndApply 对应的条件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static IEnumerator CheckAndApply()
     {
         // 兼容不需要加载界面进度的调用方。
         yield return CheckAndApply(null);
     }
 
+    /// <summary>
+    /// 检查并处理 LuaHotfixRemoteUpdater 中与 CheckAndApply 对应的条件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：通过本类公开入口维护统一状态，并由调用方处理失败返回或回退逻辑。
+    /// </remarks>
     public static IEnumerator CheckAndApply(Action<float, string> onProgress)
     {
         // 阶段一：请求远端 manifest 并验证基本字段。
@@ -130,6 +142,12 @@ public static class LuaHotfixRemoteUpdater
         }
     }
 
+    /// <summary>
+    /// 加载 LuaHotfixRemoteUpdater 中与 LoadLocalManifest 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static LuaHotfixManifest LoadLocalManifest()
     {
         // version.json 和实际生效 Lua 位于同一目录，用于下次启动版本对比。
@@ -150,6 +168,12 @@ public static class LuaHotfixRemoteUpdater
         }
     }
 
+    /// <summary>
+    /// 反序列化并校验服务器返回的 Lua 热更新 manifest。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static LuaHotfixManifest ParseManifest(string json, string source)
     {
         try
@@ -163,6 +187,12 @@ public static class LuaHotfixRemoteUpdater
         }
     }
 
+    /// <summary>
+    /// 判断 LuaHotfixRemoteUpdater 当前是否满足 IsValidManifest 对应的状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static bool IsValidManifest(LuaHotfixManifest manifest)
     {
         // 缺少任意关键字段都不能继续下载，避免拼出非法 URL 或接受空包。
@@ -173,6 +203,12 @@ public static class LuaHotfixRemoteUpdater
             && manifest.size > 0;
     }
 
+    /// <summary>
+    /// 先校验长度，再计算 SHA256；两项都匹配才允许解压。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static bool VerifyPackage(byte[] zipBytes, LuaHotfixManifest manifest)
     {
         // 先校验长度，再计算 SHA256；两项都匹配才允许解压。
@@ -198,6 +234,12 @@ public static class LuaHotfixRemoteUpdater
         return true;
     }
 
+    /// <summary>
+    /// 每次更新先清理上次中断留下的临时目录。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void ApplyPackage(byte[] zipBytes, LuaHotfixManifest manifest)
     {
         // 每次更新先清理上次中断留下的临时目录。
@@ -222,6 +264,12 @@ public static class LuaHotfixRemoteUpdater
         SafeDeleteDirectory(DownloadRoot);
     }
 
+    /// <summary>
+    /// 每个 Entry 都转换为绝对路径并验证仍在 staging 内，阻止 Zip Slip 路径穿越。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void ExtractZip(string zipPath, string targetRoot)
     {
         // 每个 Entry 都转换为绝对路径并验证仍在 staging 内，阻止 Zip Slip 路径穿越。
@@ -258,6 +306,12 @@ public static class LuaHotfixRemoteUpdater
         }
     }
 
+    /// <summary>
+    /// 判断 LuaHotfixRemoteUpdater 当前是否满足 IsPathInsideRoot 对应的状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static bool IsPathInsideRoot(string path, string root)
     {
         string normalizedRoot = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
@@ -265,6 +319,12 @@ public static class LuaHotfixRemoteUpdater
         return path.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// 先备份旧版本；新目录移动失败时恢复备份，保证至少有一套可用 Lua。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void ReplaceHotfixDirectory()
     {
         // 先备份旧版本；新目录移动失败时恢复备份，保证至少有一套可用 Lua。
@@ -292,6 +352,12 @@ public static class LuaHotfixRemoteUpdater
         }
     }
 
+    /// <summary>
+    /// 输出小写十六进制字符串，与 Editor 构建工具生成的 manifest 格式一致。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static string ComputeSha256(byte[] bytes)
     {
         // 输出小写十六进制字符串，与 Editor 构建工具生成的 manifest 格式一致。
@@ -302,6 +368,12 @@ public static class LuaHotfixRemoteUpdater
         }
     }
 
+    /// <summary>
+    /// 只接收本类预先计算的三个明确目录，不处理外部传入路径。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void SafeDeleteDirectory(string path)
     {
         // 只接收本类预先计算的三个明确目录，不处理外部传入路径。
@@ -311,6 +383,12 @@ public static class LuaHotfixRemoteUpdater
         }
     }
 
+    /// <summary>
+    /// 向调用方报告 LuaHotfixRemoteUpdater 当前流程的状态或进度。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 LuaHotfixRemoteUpdater 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private static void Report(Action<float, string> onProgress, float progress, string status)
     {
         // 没有加载 UI 时 onProgress 为 null，更新流程仍可正常执行。

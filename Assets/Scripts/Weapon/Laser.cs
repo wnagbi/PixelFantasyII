@@ -5,6 +5,12 @@ public class Laser : MonoBehaviour
 {
     private FunnelController weapon;
 
+    /// <summary>
+    /// 激光由 FunnelController 生成时注入 owner，避免运行时查找控制器。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Laser 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Init(FunnelController owner)
     {
         // 激光由 FunnelController 生成时注入 owner，避免运行时查找控制器。
@@ -17,6 +23,12 @@ public class Laser : MonoBehaviour
         Invoke(nameof(LaserDestory), 0.5f);
     }
 
+    /// <summary>
+    /// 处理当前对象进入二维触发器时的交互逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (!collision.CompareTag("Enemy"))
@@ -47,6 +59,12 @@ public class Laser : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// 方法保持 public，兼容可能存在的动画事件调用。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Laser 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void LaserDestory()
     {
         // 方法保持 public，兼容可能存在的动画事件调用。

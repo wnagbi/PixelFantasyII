@@ -76,6 +76,12 @@ public class Player : MonoBehaviour
         currentState.OnFixUpData();
     }
 
+    /// <summary>
+    /// 退出当前状态并进入指定的新状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void TransitionState(PlayerStateType type)
     {
         currentState?.OnExit();
@@ -83,16 +89,34 @@ public class Player : MonoBehaviour
         currentState.OnEnter();
     }
 
+    /// <summary>
+    /// 返回玩家 Animator，供暂停和武器选择流程控制动画。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public Animator GetAni()
     {
         return ani;
     }
 
+    /// <summary>
+    /// 接收 Input System 移动回调并保存最新输入向量。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void OnMove(InputAction.CallbackContext ctx)
     {
         inputValue = ctx.ReadValue<Vector2>();
     }
 
+    /// <summary>
+    /// 根据输入向量和玩家速度更新 Rigidbody2D 速度。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Move()
     {
         isRuning = inputValue.magnitude > 0.0001f;
@@ -101,6 +125,12 @@ public class Player : MonoBehaviour
         rig.velocity = inputValue * PlayerData.getInstance().CurrentSpeed;
     }
 
+    /// <summary>
+    /// 触发全场拾取逻辑，用于磁铁技能收集掉落物。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void PickUpAllItem()
     {
         for (int i = 0; i < pickUpSet.transform.childCount; i++)
@@ -114,6 +144,12 @@ public class Player : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 兼容旧入口：外部仍可调用 player.GetDamage(value)。 实际伤害计算、Lua 修正和扣血流程都统一交给 DamageSystem。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void GetDamage(float damage)
     {
         // 兼容旧入口：外部仍可调用 player.GetDamage(value)。
@@ -134,6 +170,12 @@ public class Player : MonoBehaviour
         });
     }
 
+    /// <summary>
+    /// 只有 DamageSystem 应该调用这个方法。 Player 自己只负责扣血和触发受伤/死亡事件，不再负责伤害公式。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public DamageResult ApplyDamageFromSystem(float finalDamage)
     {
         // 只有 DamageSystem 应该调用这个方法。
@@ -163,6 +205,12 @@ public class Player : MonoBehaviour
         };
     }
 
+    /// <summary>
+    /// 把玩家切换到受伤状态并触发震动反馈。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Player 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void PlayerHurt()
     {
         isHurt = true;
@@ -170,12 +218,24 @@ public class Player : MonoBehaviour
         FlashColor(0.5f);
     }
 
+    /// <summary>
+    /// 临时切换受击颜色并安排恢复。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Player 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void FlashColor(float time)
     {
         sr.material.color = Color.red;
         Invoke(nameof(ResetColor), time);
     }
 
+    /// <summary>
+    /// 把受击闪色恢复为对象原始颜色。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Player 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void ResetColor()
     {
         sr.material.color = originColor;

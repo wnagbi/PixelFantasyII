@@ -98,6 +98,12 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 退出当前状态并进入指定的新状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void TransitionState(EnemyStateType type)
     {
         if (!states.ContainsKey(type))
@@ -110,6 +116,12 @@ public class Enemy : MonoBehaviour
         currentState.OnEnter();
     }
 
+    /// <summary>
+    /// 取得当前注册玩家并驱动敌人向玩家追踪移动。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ChasePlayer()
     {
         if (target == null && !PlayerRuntimeRegistry.TryGetPlayerTransform(out target))
@@ -123,6 +135,12 @@ public class Enemy : MonoBehaviour
         rig.velocity = dir * enemySpeed;
     }
 
+    /// <summary>
+    /// 兼容旧入口：旧武器、Lua 或 UnityEvent 仍然可以调用 enemy:GetDamage(value)。 新流程会立刻转给 DamageSystem，避免这里继续写伤害公式。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void GetDamage(float damage)
     {
         // 兼容旧入口：旧武器、Lua 或 UnityEvent 仍然可以调用 enemy:GetDamage(value)。
@@ -143,6 +161,12 @@ public class Enemy : MonoBehaviour
         });
     }
 
+    /// <summary>
+    /// 只有 DamageSystem 应该调用这个方法。 Enemy 自己只负责扣血、触发受伤/死亡事件，不再负责计算最终伤害。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public DamageResult ApplyDamageFromSystem(float finalDamage)
     {
         // 只有 DamageSystem 应该调用这个方法。
@@ -167,30 +191,60 @@ public class Enemy : MonoBehaviour
         };
     }
 
+    /// <summary>
+    /// 临时切换受击颜色并安排恢复。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void FlashColor(float time)
     {
         sr.material.color = Color.red;
         Invoke(nameof(ResetColor), time);
     }
 
+    /// <summary>
+    /// 把受击闪色恢复为对象原始颜色。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Enemy 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void ResetColor()
     {
         sr.material.color = originColor;
         isHurt = false;
     }
 
+    /// <summary>
+    /// 设置敌人受伤状态并触发对应状态机切换。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void EnemeyHurt()
     {
         isHurt = true;
         AudioController.instance.PlaySE(vfDie);
     }
 
+    /// <summary>
+    /// 把敌人标记为死亡并切换到死亡状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void EnemyDie()
     {
         isDie = true;
         live = false;
     }
 
+    /// <summary>
+    /// 优先调用 Lua 敌人死亡规则，未处理时执行 C# 默认销毁流程。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void EnemyDestroy()
     {
         if (LuaConfig.TryCallBool("hotfix.enemy.enemy_state", "OnEnemyDestroy", this, 0, out bool handled) && handled)
@@ -201,6 +255,12 @@ public class Enemy : MonoBehaviour
         DefaultEnemyDestroy();
     }
 
+    /// <summary>
+    /// 执行默认击杀计数、掉落生成和对象池回收流程。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void DefaultEnemyDestroy()
     {
         RunData.AddKill();
@@ -209,6 +269,12 @@ public class Enemy : MonoBehaviour
         ObjPoolManager.instance.ReturnObj(gameObject);
     }
 
+    /// <summary>
+    /// 为敌人创建并启用 C# 默认状态机实现。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void UseDefaultStates()
     {
         states.Clear();
@@ -219,6 +285,12 @@ public class Enemy : MonoBehaviour
         states.Add(EnemyStateType.Die, new EnemyDieState(this));
     }
 
+    /// <summary>
+    /// 为敌人创建并启用由 LuaState 转发的热更新状态机。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void UseLuaStates()
     {
         states.Clear();
@@ -229,6 +301,12 @@ public class Enemy : MonoBehaviour
         states.Add(EnemyStateType.Die, new LuaState(this, "hotfix.enemy.enemy_state", "EnemyDie"));
     }
 
+    /// <summary>
+    /// 检测敌人攻击范围并通过 DamageSystem 对玩家造成伤害。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Enemy 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ColliderAttack()
     {
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, colliderDisntance, playerMask);
@@ -244,6 +322,12 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 处理当前对象停留在二维触发器内时的持续交互。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerStay2D(Collider2D collision)
     {
         if (collision.CompareTag("Player") && collision.TryGetComponent(out Player player))

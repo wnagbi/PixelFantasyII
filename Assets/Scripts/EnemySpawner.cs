@@ -69,6 +69,12 @@ public class EnemySpawner : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// 尝试执行 TryBindPlayer，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 EnemySpawner 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private bool TryBindPlayer()
     {
         if (PlayerRuntimeRegistry.TryGetPlayerTransform(out player))
@@ -85,7 +91,13 @@ public class EnemySpawner : MonoBehaviour
         return false;
     }
 
-    public float GetCurrentSpawnInterval()  //刷怪间隔计算
+    /// <summary>
+    /// 根据关卡配置和运行时间计算当前刷怪间隔。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 EnemySpawner 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public float GetCurrentSpawnInterval()
     {
         float t = Mathf.Clamp01(gameTime / maxDifficultyTime);
         float difficulty = Mathf.Pow(t, accelerationFactor*10);
@@ -94,7 +106,13 @@ public class EnemySpawner : MonoBehaviour
     }
 
 
-    public Vector3 SelectSpawnPoint() //怪物刷新点计算
+    /// <summary>
+    /// 在玩家周围允许的环形区域内计算敌人生成位置。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 EnemySpawner 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public Vector3 SelectSpawnPoint()
     {
         Vector3 spawnPoint = Vector3.zero;
         bool spawnVerticalEdge = Random.Range(0f, 1f) > 0.5f;

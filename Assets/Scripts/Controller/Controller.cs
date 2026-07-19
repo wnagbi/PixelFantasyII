@@ -19,6 +19,12 @@ public class Controller : MonoBehaviour
         pad = Gamepad.current;
     }
 
+    /// <summary>
+    /// 如果没有手柄或设置中关闭震动，直接跳过。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     public void StartVibration(float lowFequency, float highFequency, float duration) 
     {
         // 如果没有手柄或设置中关闭震动，直接跳过。
@@ -30,6 +36,12 @@ public class Controller : MonoBehaviour
         isVibration = true;
         Invoke("StopVibration",duration);
     }
+    /// <summary>
+    /// 停止手柄震动，避免震动残留。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Controller 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void StopVibration() 
     {
         // 停止手柄震动，避免震动残留。

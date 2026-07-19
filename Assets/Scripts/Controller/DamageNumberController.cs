@@ -14,6 +14,12 @@ public class DamageNumberController : MonoBehaviour
         // 敌人/武器等脚本通过 instance 请求生成伤害数字。
         instance = this;
     }
+    /// <summary>
+    /// 从伤害数字对象池取出实例并设置显示数值和位置。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 DamageNumberController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void SpawnDamage(float damageAmount, Vector3 location) 
     {
         // 显示时取整，避免 UI 上出现过长小数。

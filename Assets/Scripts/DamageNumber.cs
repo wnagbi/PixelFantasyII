@@ -29,6 +29,12 @@ public class DamageNumber : MonoBehaviour
         returnPending = false;
     }
 
+    /// <summary>
+    /// 设置 DamageNumber 中与 Setup 对应的状态或数据。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 DamageNumber 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Setup(int damageDisplay) 
     {
         if (rectTransform == null)
@@ -54,6 +60,12 @@ public class DamageNumber : MonoBehaviour
         displaySequence.OnComplete(ReturnToPool);
     }
 
+    /// <summary>
+    /// 归还或返回 DamageNumber 中与 ReturnToPool 对应的对象。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 DamageNumber 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void ReturnToPool()
     {
         // 先清除标记再禁用对象，避免 OnDisable 再次处理同一条完成回调。

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -66,6 +66,12 @@ public class Skill : MonoBehaviour
     }
    
 
+    /// <summary>
+    /// 集中处理 Skill 中与 HandleClickSkill 对应的事件或结果。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Skill 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void HandleClickSkill()
     {
         // 已购买时这里目前只打印日志；未购买时检查分数是否足够。
@@ -87,6 +93,12 @@ public class Skill : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 根据最新数据刷新 Skill 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void RefreshIconState()
     {
         if (image == null)
@@ -98,6 +110,12 @@ public class Skill : MonoBehaviour
         image.sprite = isAlreadyBuy ? originImage : lockImage;
     }
 
+    /// <summary>
+    /// 只处理属于当前技能项的解锁事件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnSkillUnlocked(int skillId)
     {
         // 只处理属于当前技能项的解锁事件。
@@ -110,6 +128,12 @@ public class Skill : MonoBehaviour
         RefreshIconState();
     }
 
+    /// <summary>
+    /// 本地化价格文本变化时重新拼接并显示当前价格。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnPriceStringChanged(string localizedText)
     {
         if (priceText != null)
@@ -118,6 +142,12 @@ public class Skill : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 本地化名称变化时刷新当前 UI 文本。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnNameStringChanged(string localizedText)
     {
         if (nameText != null)
@@ -126,6 +156,12 @@ public class Skill : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 本地化描述变化时刷新当前 UI 文本。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnDescriptionStringChanged(string localizedText)
     {
         if (descibleText != null)
@@ -134,6 +170,12 @@ public class Skill : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 加载 Skill 中与 LoadAddressableIcon 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private IEnumerator LoadAddressableIcon()
     {
         // 图标 key 从 Lua 配置读取；加载失败时继续使用 Inspector 里拖好的图。
@@ -155,6 +197,12 @@ public class Skill : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Lua 表结构来自 config.skill_config：skills[skillId].iconKey / effectKey。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Skill 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private string GetSkillResourceKey(int skillId, string keyName, string fallback)
     {
         // Lua 表结构来自 config.skill_config：skills[skillId].iconKey / effectKey。

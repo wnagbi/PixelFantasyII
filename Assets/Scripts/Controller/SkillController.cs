@@ -73,6 +73,12 @@ public class SkillController : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// 根据最新数据刷新 SkillController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void RefreshSkillButtons()
     {
         // PlayerSaveStore 是权威数据源；事件只负责通知“该重新读一次”。
@@ -81,11 +87,23 @@ public class SkillController : MonoBehaviour
         ds.SetActive(PlayerSaveStore.IsSkillUnlocked(3));
     }
 
+    /// <summary>
+    /// 当前只有三个技能，直接统一刷新，避免写多套按钮分支。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnSkillUnlocked(int skillId)
     {
         // 当前只有三个技能，直接统一刷新，避免写多套按钮分支。
         RefreshSkillButtons();
     }
+    /// <summary>
+    /// 磁铁技能优先交给 Lua 判断解锁、CD、释放条件和实际效果。 Lua 不处理时，继续走下面的 C# 默认逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void OnSkill1()
     {
         // 磁铁技能优先交给 Lua 判断解锁、CD、释放条件和实际效果。
@@ -103,6 +121,12 @@ public class SkillController : MonoBehaviour
             MagnetCD(magenetCD);
         }
     }
+    /// <summary>
+    /// 狂怒技能优先交给 Lua。Lua 可以热更额外伤害、持续时间和 CD。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void OnSkill2() 
     {
         // 狂怒技能优先交给 Lua。Lua 可以热更额外伤害、持续时间和 CD。
@@ -120,6 +144,12 @@ public class SkillController : MonoBehaviour
             
         }
     }
+    /// <summary>
+    /// 次元斩技能优先交给 Lua。C# 仍保留 UI、特效实例化和冷却表现。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void OnSkill3() 
     {
         // 次元斩技能优先交给 Lua。C# 仍保留 UI、特效实例化和冷却表现。
@@ -140,6 +170,12 @@ public class SkillController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 判断当前条件是否允许执行 CanUseSkill 对应的操作。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public bool CanUseSkill(int skillId)
     {
         // 暴露给 Lua 的查询方法：Lua 释放技能前可以复用 C# 的暂停、解锁、CD 判断。
@@ -161,6 +197,12 @@ public class SkillController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 暴露给 Lua 的执行方法：Lua 决定释放后，让 C# 负责 UnityEvent 和 UI 冷却。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void TriggerMagnet(float cooldown)
     {
         // 暴露给 Lua 的执行方法：Lua 决定释放后，让 C# 负责 UnityEvent 和 UI 冷却。
@@ -170,6 +212,12 @@ public class SkillController : MonoBehaviour
         MagnetCD(cooldown);
     }
 
+    /// <summary>
+    /// 暴露给 Lua：Lua 传入热更后的伤害、持续时间和 CD，C# 负责应用数值和 DOTween。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void TriggerRage(float extraDamage, float duration, float cooldown)
     {
         // 暴露给 Lua：Lua 传入热更后的伤害、持续时间和 CD，C# 负责应用数值和 DOTween。
@@ -180,6 +228,12 @@ public class SkillController : MonoBehaviour
         isRageCD = true;
     }
 
+    /// <summary>
+    /// 暴露给 Lua：Lua 决定能否释放，C# 负责开 UI、生成特效、启动冷却。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void TriggerDimensionSlash(float cooldown)
     {
         // 暴露给 Lua：Lua 决定能否释放，C# 负责开 UI、生成特效、启动冷却。
@@ -189,10 +243,22 @@ public class SkillController : MonoBehaviour
         DSCD(cooldown);
         isDSCD = true;
     }
+    /// <summary>
+    /// 在次元斩效果结束后恢复相机或画面滤镜参数。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void RestoreFilter()
     {
         uiFilter.SetActive(false);
     }
+    /// <summary>
+    /// 在狂怒持续时间内应用额外伤害并在结束后恢复。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ImproveAttackDuration(float duration) 
     {
         rageImage.fillAmount = 1;
@@ -212,6 +278,12 @@ public class SkillController : MonoBehaviour
                 
             });
     }
+    /// <summary>
+    /// 运行狂怒技能冷却计时并恢复可释放状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void RageCD(float duration)
     {
         
@@ -232,6 +304,12 @@ public class SkillController : MonoBehaviour
             Debug.Log("Cooldown finished");
         });
     }
+    /// <summary>
+    /// 运行次元斩技能冷却计时并恢复可释放状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void DSCD(float duration)
     {
 
@@ -252,11 +330,23 @@ public class SkillController : MonoBehaviour
             Debug.Log("Cooldown finished");
         });
     }
+    /// <summary>
+    /// 根据保存的输入设备类型刷新技能按钮提示图标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void UIChange() 
     {
         RefreshInputIcons(InputController.CurrentDeviceType);
      }
 
+    /// <summary>
+    /// 根据最新数据刷新 SkillController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void RefreshInputIcons(PlayerInputDeviceType deviceType)
     {
         if (deviceType == PlayerInputDeviceType.Gamepad)
@@ -294,6 +384,12 @@ public class SkillController : MonoBehaviour
             dsImageButton.sprite = dsKeyUi;
         }
     }
+    /// <summary>
+    /// 运行磁铁技能冷却计时并恢复可释放状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 SkillController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void MagnetCD(float duration)
     {
         magnetImage.fillAmount = 1;
@@ -315,6 +411,12 @@ public class SkillController : MonoBehaviour
             });
     }
 
+    /// <summary>
+    /// 加载 SkillController 中与 LoadAddressableSkillAssets 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private IEnumerator LoadAddressableSkillAssets()
     {
         yield return LoadSkillIcon(1, magnetImage);
@@ -327,6 +429,12 @@ public class SkillController : MonoBehaviour
         dimensionSlashEffectKey = GetSkillResourceKey(3, "effectKey", string.Empty);
     }
 
+    /// <summary>
+    /// 加载 SkillController 中与 LoadSkillIcon 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private IEnumerator LoadSkillIcon(int skillId, Image targetImage)
     {
         if (targetImage == null)
@@ -351,6 +459,12 @@ public class SkillController : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// 从 Lua 技能配置中读取指定技能的 Addressable 资源 key。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private string GetSkillResourceKey(int skillId, string keyName, string fallback)
     {
         if (!LuaConfig.TryGetTable(SkillConfigModule, "skills", out XLua.LuaTable skills))
@@ -381,6 +495,12 @@ public class SkillController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 优先通过 Addressables 生成次元斩特效，失败时使用 Inspector fallback。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void SpawnDimensionSlashEffect()
     {
         Vector3 spawnPosition = position != null ? position.position : transform.position;
@@ -400,6 +520,12 @@ public class SkillController : MonoBehaviour
         ));
     }
 
+    /// <summary>
+    /// Addressables 特效加载失败时实例化 Inspector 中的次元斩特效。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 SkillController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void InstantiateFallbackDimensionSlash(Vector3 spawnPosition)
     {
         if (particle != null)

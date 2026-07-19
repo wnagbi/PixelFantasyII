@@ -36,12 +36,24 @@ public class Missile : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 由生成导弹的 Controller 注入数值来源，避免场景扫描。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Missile 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Init(MissileController owner)
     {
         // 由生成导弹的 Controller 注入数值来源，避免场景扫描。
         weapon = owner;
     }
 
+    /// <summary>
+    /// 通过调整 Animator.speed 让目标动画适配热更后的落地时间。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Missile 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void SetAnimationDuration(float newDuration)
     {
         // 通过调整 Animator.speed 让目标动画适配热更后的落地时间。
@@ -53,6 +65,12 @@ public class Missile : MonoBehaviour
         ani.speed = targetAnimation.length / newDuration;
     }
 
+    /// <summary>
+    /// 处理当前对象进入二维触发器时的交互逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (!collision.CompareTag("Enemy"))
@@ -83,6 +101,12 @@ public class Missile : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// 动画事件调用：打开短时间碰撞窗口，随后销毁导弹落点。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 Missile 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void Fire()
     {
         // 动画事件调用：打开短时间碰撞窗口，随后销毁导弹落点。
@@ -94,6 +118,12 @@ public class Missile : MonoBehaviour
         Invoke(nameof(MissileDestroy), 0.1f);
     }
 
+    /// <summary>
+    /// 在延迟结束后销毁或回收指定导弹对象。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 Missile 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void MissileDestroy()
     {
         Destroy(gameObject);

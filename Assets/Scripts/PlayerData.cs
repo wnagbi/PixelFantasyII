@@ -68,12 +68,24 @@ public class PlayerData : SingleBaseManager<PlayerData>
     // 保留事件在 PlayerData 内，可以继续兼容 C# 和 Lua 直接修改 Exp 的现有方式。
     public event Action<int> OnExperienceChanged;
 
+    /// <summary>
+    /// 统一走 CurrentHealth 属性，保证扣血/回血都会触发血量事件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 PlayerData 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void SetHealth(float value)
     {
         // 统一走 CurrentHealth 属性，保证扣血/回血都会触发血量事件。
         CurrentHealth = value;
     }
 
+    /// <summary>
+    /// 同时触发旧事件和全局事件，避免旧 UI 失效，也让新事件系统能工作。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 PlayerData 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void NotifyHealthChanged()
     {
         // 同时触发旧事件和全局事件，避免旧 UI 失效，也让新事件系统能工作。
@@ -81,11 +93,23 @@ public class PlayerData : SingleBaseManager<PlayerData>
         GameEvents.RaiseHealthChanged(currentHealth, CurrentMaxHealth);
     }
 
+    /// <summary>
+    /// 向 PlayerData 添加 AddHealth 对应的对象或数据。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 PlayerData 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void AddHealth(float value)
     {
         SetHealth(CurrentHealth + value);
     }
 
+    /// <summary>
+    /// 减少玩家运行数据中的当前生命值并广播血量变化。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 PlayerData 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void TakeDamage(float value)
     {
         SetHealth(currentHealth - value);
@@ -310,6 +334,12 @@ public class PlayerData : SingleBaseManager<PlayerData>
 
 
 
+    /// <summary>
+    /// 玩家升级成长参数从 Lua 配置读取。 这里仍然由 C# 计算并写回 PlayerData，Lua 只负责提供可热更的成长系数。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     public void UpdateAllData()
     {
         // 玩家升级成长参数从 Lua 配置读取。
@@ -328,7 +358,10 @@ public class PlayerData : SingleBaseManager<PlayerData>
     /// <summary>
     /// 初始化新游戏默认数据，并写入旧版 PlayerPrefs 存档字段。
     /// </summary>
-    public void InitData()  // init data for a new game
+    /// <remarks>
+    /// 使用注意：该方法只服务仍依赖旧 PlayerPrefs 的数据；分数和技能解锁应使用 PlayerSaveStore。
+    /// </remarks>
+    public void InitData()
     {
         PlayerPrefs.SetInt("Level", 1);
         PlayerPrefs.SetInt("Exp", 0);
@@ -345,6 +378,9 @@ public class PlayerData : SingleBaseManager<PlayerData>
     /// <summary>
     /// 保存旧版玩家数据到 PlayerPrefs；新分数和技能存档已迁移到 PlayerSaveStore。
     /// </summary>
+    /// <remarks>
+    /// 使用注意：不要用该方法保存本局临时数据，也不要在 Update 中高频调用 PlayerPrefs 写入。
+    /// </remarks>
     public void SaveAllData()
     {
         PlayerPrefs.SetInt("Gold", Gold);
@@ -362,7 +398,9 @@ public class PlayerData : SingleBaseManager<PlayerData>
     /// <summary>
     /// 从旧版 PlayerPrefs 读取玩家属性，缺失字段时保留当前默认值。
     /// </summary>
-    /// 
+    /// <remarks>
+    /// 使用注意：应在依赖这些属性的系统初始化前调用；JSON 存档数据不由该方法负责。
+    /// </remarks>
     public void LoadAllData()
     {
         Gold = PlayerPrefs.GetInt("Gold", gold);
@@ -377,10 +415,22 @@ public class PlayerData : SingleBaseManager<PlayerData>
         CurrentSpeed = PlayerPrefs.GetFloat("CurrentSpeed", currentSpeed);
     }
 
+    /// <summary>
+    /// 保存 PlayerData 当前维护的数据。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 PlayerData 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void SaveKillNum() 
     {
         KillNum = RunData.KillCount;
     }
+    /// <summary>
+    /// 把指定技能 ID 写入新的 JSON 解锁存档。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 PlayerData 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ChangeSkill(int ID) 
     {
         PlayerSaveStore.UnlockSkill(ID);

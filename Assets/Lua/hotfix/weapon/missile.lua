@@ -4,7 +4,8 @@ local config = require("config.weapon_config").missile
 
 local M = {}
 
--- 武器初始化钩子，用于校正非法冷却值或应用首包热更默认值。
+-- 用途：在导弹 Host 与 Addressables Prefab 准备完成后初始化可热更参数。
+-- 使用注意：不要在这里生成攻击对象；仅校正参数，且 cooldownDuration 必须保持大于 0。
 function M.OnStart(host)
     if host.cooldownDuration <= 0 then
         host.cooldownDuration = 1
@@ -13,11 +14,14 @@ function M.OnStart(host)
     -- host.cooldownDuration = 0.3
 end
 
+-- 用途：预留导弹逐帧热更行为入口。
+-- 使用注意：该函数每帧调用，应避免资源加载、场景查找和大量临时对象分配。
 function M.OnUpdate(host, deltaTime)
     -- 当前导弹没有额外逐帧 Lua 行为，保留接口方便后续扩展。
 end
 
--- 在玩家周围的圆环范围随机选择落点，并按 count 生成导弹。
+-- 用途：在玩家周围的圆环范围内按 count 随机生成导弹。
+-- 使用注意：必须调用 host:ResetCooldown；生成应通过 Host 接口以复用 Addressables fallback 和组件注入。
 function M.OnAttack(host)
     host:ResetCooldown()
 
@@ -35,7 +39,8 @@ function M.OnAttack(host)
     end
 end
 
--- 导弹等级成长规则；满级时通知 C# 从升级候选列表移除。
+-- 用途：修改导弹冷却、伤害和数量，并在满级时退出升级候选列表。
+-- 使用注意：每次调用只能推进一个等级；selectName 必须与 C# 武器选择配置一致。
 function M.OnLevelUp(host)
     local level = host.level
 

@@ -15,6 +15,12 @@ public class KnifeController : HotfixWeaponController
         base.Start();
        
     }
+    /// <summary>
+    /// 根据最新数据刷新 KnifeController 的状态或显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 KnifeController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Refresh()
     {
         InitializeWeapon();
@@ -35,6 +41,12 @@ public class KnifeController : HotfixWeaponController
 
 
 
+    /// <summary>
+    /// Lua 处理成功时不执行 C# 默认旋转；Lua 失败才回退。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 KnifeController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void Attack()
     {
         // Lua 处理成功时不执行 C# 默认旋转；Lua 失败才回退。
@@ -47,6 +59,12 @@ public class KnifeController : HotfixWeaponController
         rotationPoint.transform.rotation = Quaternion.Euler(0f, 0f, rotationPoint.transform.rotation.eulerAngles.z + (speed * Time.deltaTime));
 
     }
+    /// <summary>
+    /// Lua 可以热更 count、damage、speed 和满级移除逻辑。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 KnifeController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void levelUp() 
     {
         // Lua 可以热更 count、damage、speed 和满级移除逻辑。
@@ -90,6 +108,12 @@ public class KnifeController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 暴露给 Lua：升级后清空旧刀阵并按当前 count 重新生成。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 KnifeController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void RebuildKnives()
     {
         // 暴露给 Lua：升级后清空旧刀阵并按当前 count 重新生成。
@@ -97,11 +121,23 @@ public class KnifeController : HotfixWeaponController
         Refresh();
     }
 
+    /// <summary>
+    /// 在 Lua 模块和 Addressables Prefab 准备完成后初始化具体武器表现。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 KnifeController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override void OnHotfixStartReady()
     {
         RebuildKnives();
     }
 
+    /// <summary>
+    /// 默认 Lua 模块路径。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 KnifeController 及其派生类调用，重写时应保持基类约定和调用顺序。
+    /// </remarks>
     protected override string GetDefaultLuaModuleName()
     {
         // 默认 Lua 模块路径。

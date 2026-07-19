@@ -70,6 +70,12 @@ public static class DamageSystem
     private const string LegacyEnemyRuleModule = "hotfix.enemy.enemy_state";
     private const string LegacyPlayerRuleModule = "hotfix.player.player_rule";
 
+    /// <summary>
+    /// 计算并应用一笔针对敌人的伤害，同时处理 Lua 修正和伤害数字。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：context.target 必须挂有激活的 Enemy；该入口是新武器和技能的统一伤害入口。
+    /// </remarks>
     public static DamageResult ApplyToEnemy(DamageContext context)
     {
         // 先从 context.target 上取 Enemy。目标为空或已经禁用时，本次伤害直接跳过。
@@ -104,6 +110,12 @@ public static class DamageSystem
         return result;
     }
 
+    /// <summary>
+    /// 计算并应用一笔针对玩家的伤害，同时执行玩家 Lua 伤害修正。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：context.target 必须挂有激活的 Player；实际血量和死亡事件由 Player 处理。
+    /// </remarks>
     public static DamageResult ApplyToPlayer(DamageContext context)
     {
         // 玩家受伤也走同一套计算和 Lua 修正，但第一版不显示伤害数字。
@@ -124,6 +136,12 @@ public static class DamageSystem
         return player.ApplyDamageFromSystem(finalDamage);
     }
 
+    /// <summary>
+    /// 创建带有武器来源、额外伤害和飘字配置的标准敌人伤害上下文。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：该方法只构造数据，不会扣血；创建后仍需传给 ApplyToEnemy。
+    /// </remarks>
     public static DamageContext CreateWeaponDamage(
         GameObject attacker,
         Enemy target,
@@ -148,6 +166,12 @@ public static class DamageSystem
         };
     }
 
+    /// <summary>
+    /// 创建敌人接触玩家时使用的标准伤害上下文。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：该方法默认不显示伤害数字；创建后仍需传给 ApplyToPlayer。
+    /// </remarks>
     public static DamageContext CreateEnemyContactDamage(
         Enemy attacker,
         Player target,
@@ -171,6 +195,12 @@ public static class DamageSystem
         };
     }
 
+    /// <summary>
+    /// 合并基础伤害和额外伤害，得到进入 Lua 修正前的 C# 伤害值。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅由统一伤害入口调用；结果小于等于 0 时不会应用到目标。
+    /// </remarks>
     private static float CalculateBaseDamage(DamageContext context)
     {
         // 防止外部没有设置 multiplier 导致所有伤害被乘成 0。
@@ -178,6 +208,12 @@ public static class DamageSystem
         return (context.baseDamage + context.bonusDamage) * multiplier;
     }
 
+    /// <summary>
+    /// 依次尝试新版与旧版 Lua 模块修正敌人最终伤害。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：Lua 调用失败时必须返回原伤害，保证热更异常不会阻断战斗。
+    /// </remarks>
     private static float AdjustEnemyDamage(Enemy enemy, float damage)
     {
         // 优先走新版统一伤害 Lua；失败时回退到旧 enemy_state.lua。
@@ -194,6 +230,12 @@ public static class DamageSystem
         return damage;
     }
 
+    /// <summary>
+    /// 依次尝试新版与旧版 Lua 模块修正玩家最终受伤值。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：Lua 调用失败时必须返回原伤害，不能让玩家进入无敌或启动失败状态。
+    /// </remarks>
     private static float AdjustPlayerDamage(Player player, float damage)
     {
         // 优先走新版统一伤害 Lua；失败时回退到旧 player_rule.lua。
@@ -210,6 +252,12 @@ public static class DamageSystem
         return damage;
     }
 
+    /// <summary>
+    /// 从伤害上下文目标对象上安全解析指定组件类型。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：目标为空或缺少组件时返回 null，调用方必须把它视为本次伤害未应用。
+    /// </remarks>
     private static T ResolveTarget<T>(DamageContext context) where T : Component
     {
         // 统一处理 target 为空、组件不存在等情况，避免每个入口重复判空。
@@ -221,6 +269,12 @@ public static class DamageSystem
         return context.target.TryGetComponent(out T component) ? component : null;
     }
 
+    /// <summary>
+    /// 创建一份表示伤害未应用的标准结果。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：目标无效、伤害非正数或规则拒绝伤害时统一返回该结果。
+    /// </remarks>
     private static DamageResult CreateSkippedResult(float finalDamage = 0f)
     {
         // 表示这次伤害没有真正应用，例如目标为空、伤害小于等于 0。

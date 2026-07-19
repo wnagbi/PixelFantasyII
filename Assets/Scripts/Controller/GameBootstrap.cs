@@ -43,6 +43,12 @@ public sealed class GameBootstrap : MonoBehaviour
         SceneManager.LoadScene(titleSceneName);
     }
 
+    /// <summary>
+    /// loadingView 缺失时跳过表现，不阻塞真正的热更新流程。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 GameBootstrap 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private IEnumerator SmoothTo(float target, string status)
     {
         // loadingView 缺失时跳过表现，不阻塞真正的热更新流程。
@@ -54,6 +60,12 @@ public sealed class GameBootstrap : MonoBehaviour
         yield return loadingView.SmoothTo(target, status);
     }
 
+    /// <summary>
+    /// 把子系统自己的 0~1 进度映射到启动总进度的指定区间。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 GameBootstrap 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private Action<float, string> CreateProgressCallback(float start, float end, string fallbackStatus)
     {
         // 把子系统自己的 0~1 进度映射到启动总进度的指定区间。

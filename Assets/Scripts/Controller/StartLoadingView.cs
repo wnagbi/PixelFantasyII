@@ -14,6 +14,12 @@ public sealed class StartLoadingView : MonoBehaviour
 
     private float currentValue;
 
+    /// <summary>
+    /// 所有入口先限制到 0~1，Slider 和百分比文字始终保持一致。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 StartLoadingView 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void SetProgress(float value, string status)
     {
         // 所有入口先限制到 0~1，Slider 和百分比文字始终保持一致。
@@ -35,6 +41,12 @@ public sealed class StartLoadingView : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 使用 unscaledDeltaTime，避免启动阶段或 timeScale 为 0 时进度条停止。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 StartLoadingView 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public IEnumerator SmoothTo(float target, string status)
     {
         // 使用 unscaledDeltaTime，避免启动阶段或 timeScale 为 0 时进度条停止。

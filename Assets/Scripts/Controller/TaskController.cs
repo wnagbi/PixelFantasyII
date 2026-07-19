@@ -49,6 +49,12 @@ public class TaskController : MonoBehaviour
         LoadTasks(taskIndex);
     }
 
+    /// <summary>
+    /// 加载 TaskController 中与 LoadTasks 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TaskController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void LoadTasks(int index)
     {
         if (index == 0)
@@ -63,6 +69,12 @@ public class TaskController : MonoBehaviour
         isHaveTask = true;
     }
 
+    /// <summary>
+    /// 刷新当前任务文本、目标和进度显示。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TaskController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void ChangeTasks(int index)
     {
         if (index == 0)
@@ -75,6 +87,12 @@ public class TaskController : MonoBehaviour
         LoadTaskText();
     }
 
+    /// <summary>
+    /// 加载 TaskController 中与 LoadTaskFromXml 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TaskController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void LoadTaskFromXml(int index)
     {
         // 当前项目仍用 XML 存任务显示文本；规则层可以继续交给 Lua 热更。
@@ -104,6 +122,12 @@ public class TaskController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 加载 TaskController 中与 LoadTaskText 对应的数据或资源。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TaskController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void LoadTaskText()
     {
         if (tasks.Count == 0)
@@ -129,6 +153,12 @@ public class TaskController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 没有任务时清空 UI，并把进度基准重置为当前局击杀数。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TaskController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void InitTaskText()
     {
         // 没有任务时清空 UI，并把进度基准重置为当前局击杀数。
@@ -140,6 +170,12 @@ public class TaskController : MonoBehaviour
         num = RunData.KillCount;
     }
 
+    /// <summary>
+    /// 当前任务完成后清掉列表，避免后续击杀事件继续推进已完成任务。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TaskController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void FinishTask()
     {
         // 当前任务完成后清掉列表，避免后续击杀事件继续推进已完成任务。
@@ -147,6 +183,12 @@ public class TaskController : MonoBehaviour
         isHaveTask = false;
     }
 
+    /// <summary>
+    /// 初始化 TaskController 中与 InitTask 对应的依赖和状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TaskController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void InitTask()
     {
         if (tasks.Count == 0)
@@ -165,6 +207,12 @@ public class TaskController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 检查并处理 TaskController 中与 CheckTask 对应的条件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 TaskController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void CheckTask()
     {
         // 保留旧接口，兼容可能存在的 Inspector 或脚本调用。
@@ -179,6 +227,12 @@ public class TaskController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 击杀数变化时推进当前击杀任务并检查完成条件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TaskController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void OnKillCountChanged(int killCount)
     {
         if (tasks.Count == 0 || tasks[0].ID != 1)
@@ -212,6 +266,12 @@ public class TaskController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 读取当前任务经 Lua 修正后的目标数量。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TaskController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private int GetCurrentTaskGoal()
     {
         int targetGoal = tasks[0].Goal;
@@ -224,6 +284,12 @@ public class TaskController : MonoBehaviour
         return targetGoal;
     }
 
+    /// <summary>
+    /// 完成奖励优先由 Lua 处理；Lua 未处理时回退到原本的选武器奖励。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 TaskController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void CompleteCurrentTask()
     {
         // 完成奖励优先由 Lua 处理；Lua 未处理时回退到原本的选武器奖励。

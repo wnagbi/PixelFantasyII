@@ -40,6 +40,12 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 将启用且有效的敌人加入统一寻敌注册表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Enemy.OnEnable 调用；方法会忽略 null 和重复注册。
+    /// </remarks>
     public void AddEnemy(Enemy enemy)
     {
         if (enemy == null)
@@ -55,6 +61,12 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 从寻敌注册表移除禁用、死亡回收或销毁的敌人。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Enemy.OnDisable 调用；移除后会让空间网格在下次查询时重建。
+    /// </remarks>
     public void RemoveEnemy(Enemy enemy)
     {
         if (enemy == null)
@@ -68,6 +80,12 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 清空敌人注册表、空间网格和列表复用池。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：只在场景重置或管理器销毁时调用，战斗中调用会让现有敌人暂时无法被寻敌。
+    /// </remarks>
     public void Clear()
     {
         // 场景切换、重新开始或调试时可以清空注册表。
@@ -77,6 +95,12 @@ public class EnemyManager : MonoBehaviour
         lastGridBuildFrame = -1;
     }
 
+    /// <summary>
+    /// 获取指定世界坐标附近最近的有效敌人。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：先查询默认范围，找不到时回退全表扫描；无目标返回 null。
+    /// </remarks>
     public Enemy GetNearestEnemy(Vector3 origin)
     {
         // 优先在默认范围内通过空间网格查询，通常武器只关心屏幕附近的目标。
@@ -90,12 +114,24 @@ public class EnemyManager : MonoBehaviour
         return FindNearestByFullScan(origin, float.MaxValue);
     }
 
+    /// <summary>
+    /// 获取指定圆形范围内最近的有效敌人。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：range 小于等于 0 时返回 null；查询使用网格粗筛和距离平方精筛。
+    /// </remarks>
     public Enemy GetNearestEnemyInRange(Vector3 origin, float range)
     {
         // 只在指定范围内寻找最近敌人，适合有攻击距离限制的武器。
         return FindNearestInGrid(origin, Mathf.Max(0f, range));
     }
 
+    /// <summary>
+    /// 从当前全部有效敌人中随机返回一个目标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：随机查询不使用空间网格；没有有效敌人时返回 null。
+    /// </remarks>
     public Enemy GetRandomEnemy()
     {
         // 随机寻敌前先清掉无效对象，避免随机到已死亡/已回收敌人。
@@ -108,6 +144,12 @@ public class EnemyManager : MonoBehaviour
         return aliveEnemies[Random.Range(0, aliveEnemies.Count)];
     }
 
+    /// <summary>
+    /// 返回清理无效对象后的敌人只读列表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：返回的是内部列表的只读接口，外部不得长期缓存其中可能被对象池回收的 Enemy。
+    /// </remarks>
     public IReadOnlyList<Enemy> GetAliveEnemies()
     {
         // 返回只读接口，表达“外部可以遍历查看，但不要修改注册表”。
@@ -116,6 +158,12 @@ public class EnemyManager : MonoBehaviour
         return aliveEnemies;
     }
 
+    /// <summary>
+    /// 全表扫描并计算指定范围内最近的有效敌人。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅作为无范围查询的正确性回退，不应替代常规网格查询。
+    /// </remarks>
     private Enemy FindNearestByFullScan(Vector3 origin, float range)
     {
         Enemy nearest = null;
@@ -143,6 +191,12 @@ public class EnemyManager : MonoBehaviour
         return nearest;
     }
 
+    /// <summary>
+    /// 使用空间网格收集范围候选并返回最近敌人。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前会确保网格为当前帧数据；queryBuffer 是复用缓存，不得返回给外部。
+    /// </remarks>
     private Enemy FindNearestInGrid(Vector3 origin, float range)
     {
         if (range <= 0f)
@@ -175,6 +229,12 @@ public class EnemyManager : MonoBehaviour
         return nearest;
     }
 
+    /// <summary>
+    /// 确保当前帧首次查询前已经完成一次网格重建。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：同一帧多次寻敌只能重建一次，避免多武器查询重复产生开销。
+    /// </remarks>
     private void EnsureGridCurrent()
     {
         if (lastGridBuildFrame == Time.frameCount)
@@ -185,6 +245,12 @@ public class EnemyManager : MonoBehaviour
         RebuildGrid();
     }
 
+    /// <summary>
+    /// 清理无效敌人并按当前位置重新填充空间网格。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：敌人移动不做增量更新，因此查询依赖每帧懒重建获得最新格子。
+    /// </remarks>
     private void RebuildGrid()
     {
         ReleaseGridLists();
@@ -212,6 +278,12 @@ public class EnemyManager : MonoBehaviour
         lastGridBuildFrame = Time.frameCount;
     }
 
+    /// <summary>
+    /// 从列表池取得一个已清空的格子敌人列表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：取得的列表必须在下次重建前通过 ReleaseGridLists 归还。
+    /// </remarks>
     private List<Enemy> GetGridList()
     {
         if (gridListPool.Count > 0)
@@ -222,6 +294,12 @@ public class EnemyManager : MonoBehaviour
         return new List<Enemy>();
     }
 
+    /// <summary>
+    /// 清空所有网格列表并归还到列表对象池。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：归还后 spatialGrid 不再保留这些列表引用，避免同一列表被多个格子复用。
+    /// </remarks>
     private void ReleaseGridLists()
     {
         foreach (List<Enemy> enemiesInCell in spatialGrid.Values)
@@ -233,11 +311,23 @@ public class EnemyManager : MonoBehaviour
         spatialGrid.Clear();
     }
 
+    /// <summary>
+    /// 使用当前 cellSize 将世界坐标转换为网格坐标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：cellSize 会经过最小值保护，防止 Inspector 配置为 0 时除零。
+    /// </remarks>
     private Vector2Int WorldToCell(Vector3 position)
     {
         return WorldToCell(position, Mathf.Max(0.01f, cellSize));
     }
 
+    /// <summary>
+    /// 使用已经校验过的格子尺寸将世界坐标转换为网格坐标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：safeCellSize 必须大于 0，仅供网格内部循环减少重复校验。
+    /// </remarks>
     private Vector2Int WorldToCell(Vector3 position, float safeCellSize)
     {
         return new Vector2Int(
@@ -246,6 +336,12 @@ public class EnemyManager : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// 把覆盖查询圆形包围盒的格子敌人收集到复用结果列表。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：该方法只做格子粗筛，调用方仍需用距离平方执行真实圆形范围判断。
+    /// </remarks>
     private void QueryCellsInRange(Vector3 origin, float range, List<Enemy> results)
     {
         results.Clear();
@@ -272,6 +368,12 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 从注册表移除死亡、禁用、回收、空引用或生命值无效的敌人。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：清理会改变列表顺序；外部不能持有索引作为稳定敌人标识。
+    /// </remarks>
     private void CleanupInvalidEnemies()
     {
         // 从后往前删，避免 RemoveAt 后影响还没遍历到的索引。
@@ -284,6 +386,12 @@ public class EnemyManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 判断敌人是否仍可作为武器和 Lua 规则的合法目标。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：isDie 为 true 表示已死亡，同时还要检查 active、live 和 Health。
+    /// </remarks>
     private bool IsValidEnemy(Enemy enemy)
     {
         // 对象池项目里“还在列表里”不代表“还能被锁定”。
@@ -296,6 +404,12 @@ public class EnemyManager : MonoBehaviour
             && enemy.Health > 0f;
     }
 
+    /// <summary>
+    /// 在 Scene 视图绘制 EnemyManager 的调试辅助信息。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：由 Unity 按生命周期或消息规则自动调用，不要从普通业务代码直接调用。
+    /// </remarks>
     private void OnDrawGizmos()
     {
         if (!drawDebugGrid)

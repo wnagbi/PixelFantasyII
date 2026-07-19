@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
@@ -34,7 +34,13 @@ public class WeaponSelectController : MonoBehaviour
         // 升级选择时会暂时禁用玩家 Animator，避免暂停时动画状态异常。
         TryBindPlayerReferences();
     }
-    public void GenerateSelect() //使用洗牌算法
+    /// <summary>
+    /// 生成 WeaponSelectController 中与 GenerateSelect 对应的内容。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelectController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void GenerateSelect()
     {
         // Fisher-Yates 洗牌：把 selectWeapon 随机打乱，然后取前三个显示。
         for (int i = 0; i < selectWeapon.Count; i++) 
@@ -74,6 +80,12 @@ public class WeaponSelectController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 打开选择面板前清空旧引用，重新生成三个选项，并暂停游戏。 selectWeapon = weaponList;
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelectController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
     public void WeapSelect() 
     {
         // 打开选择面板前清空旧引用，重新生成三个选项，并暂停游戏。
@@ -91,7 +103,13 @@ public class WeaponSelectController : MonoBehaviour
         InputController.instance?.EnterUiMode();
     }
     #region Check
-    public void CheckLeft() //Left button check event
+    /// <summary>
+    /// 检查并处理 WeaponSelectController 中与 CheckLeft 对应的条件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelectController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void CheckLeft()
     {
         // 左侧卡被选中，执行该卡的 LevelUp。
         left.GetComponent<WeaponSelect>().LevelUp();
@@ -102,7 +120,13 @@ public class WeaponSelectController : MonoBehaviour
         FinishSelect();
         
     }
-    public void CheckMid()//Mid button check event
+    /// <summary>
+    /// 检查并处理 WeaponSelectController 中与 CheckMid 对应的条件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelectController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void CheckMid()
     {
         // 中间卡被选中。
         mid.GetComponent<WeaponSelect>().LevelUp();
@@ -113,7 +137,13 @@ public class WeaponSelectController : MonoBehaviour
         FinishSelect();
         
     }
-    public void CheckRight()//Right button check event
+    /// <summary>
+    /// 检查并处理 WeaponSelectController 中与 CheckRight 对应的条件。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelectController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void CheckRight()
     {
         // 右侧卡被选中。
         right.GetComponent<WeaponSelect>().LevelUp();
@@ -125,19 +155,37 @@ public class WeaponSelectController : MonoBehaviour
 
     }
     #endregion
-    public void FinishSelect() //Clear Weapon Selection when finish selecting
+    /// <summary>
+    /// 选择结束后销毁三张临时生成的卡。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelectController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void FinishSelect()
     {
         // 选择结束后销毁三张临时生成的卡。
         Destroy(left);
         Destroy(mid);
         Destroy(right);
     }
-    public void LevelMaxRemove(string name) //Use name to remove weapon when its level reach max
+    /// <summary>
+    /// 武器满级后从可选池移除，避免后续升级再次抽到。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：调用前应确保 WeaponSelectController 的 Inspector 引用和运行时依赖已经初始化。
+    /// </remarks>
+    public void LevelMaxRemove(string name)
     {
         // 武器满级后从可选池移除，避免后续升级再次抽到。
         selectWeapon.RemoveAll(obj =>obj.name == name);
     }
 
+    /// <summary>
+    /// 尝试执行 TryBindPlayerReferences，并通过返回值表示本次操作是否成功。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponSelectController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private bool TryBindPlayerReferences()
     {
         Player player = PlayerRuntimeRegistry.GetPlayer();
@@ -146,6 +194,12 @@ public class WeaponSelectController : MonoBehaviour
         return playerWeaponList != null;
     }
 
+    /// <summary>
+    /// 初始化 WeaponSelectController 中与 InitializeWeaponSelect 对应的依赖和状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：仅供 WeaponSelectController 内部流程调用，并依赖当前组件已经完成初始化。
+    /// </remarks>
     private void InitializeWeaponSelect(GameObject selectObject)
     {
         if (selectObject == null)
