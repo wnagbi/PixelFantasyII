@@ -1,45 +1,56 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 /// <summary>
-/// 将场景中已经存在的全屏 UI 根节点限制在设备 Safe Area 内。
+/// 在不同平台和宽高比下保持设置、地图选择界面的原始 16:9 版式。
+/// 桌面端按完整屏幕等比适配，移动端额外避让 Safe Area 并应用触摸专属设置。
 /// </summary>
 public sealed class MobileSafeAreaLayout : MonoBehaviour
 {
-    [SerializeField] private RectTransform[] safeAreaRoots;
+    [FormerlySerializedAs("safeAreaRoots")]
+    [SerializeField] private RectTransform[] fullScreenRoots;
+    [SerializeField] private RectTransform[] fittedContentRoots;
     [SerializeField] private GameObject[] desktopOnlyObjects;
     [SerializeField] private Graphic[] touchTargetGraphics;
+    [SerializeField] private Vector2 referenceResolution = new Vector2(1920f, 1080f);
+    [SerializeField] private Vector2 contentPadding = new Vector2(48f, 32f);
     [SerializeField] private Vector2 minimumTouchTargetSize = new Vector2(96f, 80f);
+    [SerializeField, Range(0.5f, 1f)] private float minimumContentScale = 0.5f;
+    [SerializeField] private bool allowContentUpscale;
     [SerializeField] private bool simulateMobileInEditor;
 
+    private Canvas rootCanvas;
     private Rect lastSafeArea;
     private Vector2Int lastScreenSize;
+    private float lastCanvasScaleFactor = -1f;
+    private bool useMobileFeatures;
 
     private void Awake()
     {
-        if (!ShouldApplyMobileLayout())
+        useMobileFeatures = ShouldUseMobileFeatures();
+        rootCanvas = GetComponentInParent<Canvas>();
+        SetDesktopOnlyObjectsVisible(!useMobileFeatures);
+        if (useMobileFeatures)
         {
-            enabled = false;
-            return;
+            ExpandTouchTargets();
         }
 
-        SetDesktopOnlyObjectsVisible(false);
-        ExpandTouchTargets();
-        ApplySafeArea(true);
+        StretchBackgroundRoots();
+        Canvas.ForceUpdateCanvases();
+        FitPanelsToAvailableArea(true);
     }
 
     private void Update()
     {
-        ApplySafeArea(false);
+        FitPanelsToAvailableArea(false);
     }
 
     /// <summary>
-    /// 判断当前环境是否需要应用移动端安全区布局。
+    /// 判断当前运行环境是否需要启用 Safe Area、触摸区和移动端专属显隐。
+    /// 使用注意：桌面端仍会执行 16:9 画框适配，但不会执行这里的移动端附加规则。
     /// </summary>
-    /// <remarks>
-    /// 使用注意：Android 构建自动启用；普通 Editor Play 需要勾选模拟开关，Windows 构建不会修改布局。
-    /// </remarks>
-    private bool ShouldApplyMobileLayout()
+    private bool ShouldUseMobileFeatures()
     {
 #if UNITY_EDITOR
         return simulateMobileInEditor;
@@ -51,55 +62,130 @@ public sealed class MobileSafeAreaLayout : MonoBehaviour
     }
 
     /// <summary>
-    /// 将所有已绑定根节点的锚点更新为当前设备 Safe Area。
+    /// 保证最外层 UI 根节点铺满 Canvas，为非 16:9 屏幕提供稳定的底色区域。
     /// </summary>
-    /// <remarks>
-    /// 使用注意：只在安全区或分辨率变化时更新，根节点本身应保持四边拉伸且 Offset 为零。
-    /// </remarks>
-    private void ApplySafeArea(bool force)
+    private void StretchBackgroundRoots()
     {
-        if (safeAreaRoots == null || Screen.width <= 0 || Screen.height <= 0)
+        if (fullScreenRoots == null)
         {
             return;
         }
 
-        Rect safeArea = Screen.safeArea;
-        Vector2Int screenSize = new Vector2Int(Screen.width, Screen.height);
-        if (!force && safeArea == lastSafeArea && screenSize == lastScreenSize)
-        {
-            return;
-        }
-
-        Vector2 anchorMin = safeArea.position;
-        Vector2 anchorMax = safeArea.position + safeArea.size;
-        anchorMin.x /= Screen.width;
-        anchorMin.y /= Screen.height;
-        anchorMax.x /= Screen.width;
-        anchorMax.y /= Screen.height;
-
-        foreach (RectTransform root in safeAreaRoots)
+        foreach (RectTransform root in fullScreenRoots)
         {
             if (root == null)
             {
                 continue;
             }
 
-            root.anchorMin = anchorMin;
-            root.anchorMax = anchorMax;
+            root.anchorMin = Vector2.zero;
+            root.anchorMax = Vector2.one;
             root.offsetMin = Vector2.zero;
             root.offsetMax = Vector2.zero;
+        }
+    }
+
+    /// <summary>
+    /// 将内容层的父级画框等比缩放到当前可用区域，保持背景槽位与按钮位置一致。
+    /// 使用注意：fittedContentRoots 应绑定 SettingContent、MapSelectContent 等内容层，
+    /// 它们的直接父节点必须是包含背景图片的固定 1920x1080 画框，而不是全屏遮罩层。
+    /// </summary>
+    private void FitPanelsToAvailableArea(bool force)
+    {
+        if (fittedContentRoots == null
+            || Screen.width <= 0
+            || Screen.height <= 0
+            || referenceResolution.x <= 0f
+            || referenceResolution.y <= 0f)
+        {
+            return;
+        }
+
+        Rect safeArea = useMobileFeatures
+            ? Screen.safeArea
+            : new Rect(0f, 0f, Screen.width, Screen.height);
+        Vector2Int screenSize = new Vector2Int(Screen.width, Screen.height);
+        float canvasScaleFactor = GetCanvasScaleFactor();
+        if (!force
+            && safeArea == lastSafeArea
+            && screenSize == lastScreenSize
+            && Mathf.Approximately(canvasScaleFactor, lastCanvasScaleFactor))
+        {
+            return;
+        }
+
+        Vector2 activePadding = useMobileFeatures ? contentPadding : Vector2.zero;
+        Vector2 availableSize = safeArea.size / canvasScaleFactor;
+        Vector2 fitSize = new Vector2(
+            Mathf.Max(1f, availableSize.x - activePadding.x * 2f),
+            Mathf.Max(1f, availableSize.y - activePadding.y * 2f));
+        float panelScale = Mathf.Min(
+            fitSize.x / referenceResolution.x,
+            fitSize.y / referenceResolution.y);
+        float maximumScale = allowContentUpscale ? float.MaxValue : 1f;
+        float minimumScale = useMobileFeatures ? minimumContentScale : 0.1f;
+        panelScale = Mathf.Clamp(panelScale, minimumScale, maximumScale);
+
+        Vector2 safeCenterOffset = (safeArea.center
+            - new Vector2(Screen.width * 0.5f, Screen.height * 0.5f)) / canvasScaleFactor;
+
+        foreach (RectTransform contentRoot in fittedContentRoots)
+        {
+            if (contentRoot == null || contentRoot.parent is not RectTransform panelRoot)
+            {
+                continue;
+            }
+
+            PreparePanelRoot(panelRoot, panelScale, safeCenterOffset);
+            PrepareContentRoot(contentRoot);
         }
 
         lastSafeArea = safeArea;
         lastScreenSize = screenSize;
+        lastCanvasScaleFactor = canvasScaleFactor;
     }
 
     /// <summary>
-    /// 统一设置只对桌面平台有意义的设置控件。
+    /// 将包含背景图片的面板恢复为 1920×1080，并整体缩放到安全区中央。
     /// </summary>
-    /// <remarks>
-    /// 使用注意：Android 中用于隐藏分辨率和全屏选项；Windows 分支不会执行该方法。
-    /// </remarks>
+    private void PreparePanelRoot(RectTransform panelRoot, float panelScale, Vector2 safeCenterOffset)
+    {
+        panelRoot.anchorMin = new Vector2(0.5f, 0.5f);
+        panelRoot.anchorMax = new Vector2(0.5f, 0.5f);
+        panelRoot.pivot = new Vector2(0.5f, 0.5f);
+        panelRoot.anchoredPosition = safeCenterOffset;
+        panelRoot.sizeDelta = referenceResolution;
+        panelRoot.localScale = Vector3.one * panelScale;
+    }
+
+    /// <summary>
+    /// 让内容层与父面板使用相同设计坐标，避免按钮相对背景发生二次缩放或偏移。
+    /// </summary>
+    private void PrepareContentRoot(RectTransform contentRoot)
+    {
+        contentRoot.anchorMin = new Vector2(0.5f, 0.5f);
+        contentRoot.anchorMax = new Vector2(0.5f, 0.5f);
+        contentRoot.pivot = new Vector2(0.5f, 0.5f);
+        contentRoot.anchoredPosition = Vector2.zero;
+        contentRoot.sizeDelta = referenceResolution;
+        contentRoot.localScale = Vector3.one;
+    }
+
+    /// <summary>
+    /// 获取 Canvas 当前缩放比例，供屏幕像素与 UI 设计坐标互相转换。
+    /// 使用注意：CanvasScaler 可能在 Awake 后才更新该值，因此 Update 会持续检测变化。
+    /// </summary>
+    private float GetCanvasScaleFactor()
+    {
+        return rootCanvas != null && rootCanvas.scaleFactor > 0f
+            ? rootCanvas.scaleFactor
+            : 1f;
+    }
+
+    /// <summary>
+    /// 隐藏只适用于桌面平台的设置项。
+    /// 使用注意：当前用于 Android 隐藏分辨率和全屏选项。
+    /// </summary>
     private void SetDesktopOnlyObjectsVisible(bool visible)
     {
         if (desktopOnlyObjects == null)
@@ -117,11 +203,9 @@ public sealed class MobileSafeAreaLayout : MonoBehaviour
     }
 
     /// <summary>
-    /// 扩大偏小控件的透明射线命中区域，不拉伸 UI 美术。
+    /// 扩大偏小控件的透明射线命中区域，但不拉伸 UI 图片。
+    /// 使用注意：相邻控件需要保留足够间距，避免触摸区域重叠。
     /// </summary>
-    /// <remarks>
-    /// 使用注意：适合 Dropdown、Toggle 等视觉高度较小的控件；相邻控件之间应留有足够间距，避免命中区域重叠。
-    /// </remarks>
     private void ExpandTouchTargets()
     {
         if (touchTargetGraphics == null)

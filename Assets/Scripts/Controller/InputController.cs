@@ -57,8 +57,14 @@ public class InputController : MonoBehaviour
 
     private void Update()
     {
-        // 输入设备活动状态和 EventSystem 焦点需要逐帧检测，属于必要的实时循环。
+        // 输入设备活动状态需要逐帧检测，才能及时在触屏和实体手柄之间切换。
         DetectInputDevice();
+    }
+
+    private void LateUpdate()
+    {
+        // EventSystem 会在 Update 中处理本帧点击；LateUpdate 再清理触屏焦点，
+        // 可以避免按钮以 Selected Color 渲染一帧后才恢复。
         RefreshUiSelection();
     }
 
@@ -74,7 +80,7 @@ public class InputController : MonoBehaviour
     }
 
     /// <summary>
-    /// 检测当前帧真正产生有效输入的键盘、鼠标或手柄设备。
+    /// 检测当前帧真正产生有效输入的触屏、键盘、鼠标或手柄设备。
     /// </summary>
     /// <remarks>
     /// 使用注意：没有新输入时返回 null；战斗模式忽略鼠标移动和滚轮，但保留鼠标按键。
@@ -82,6 +88,12 @@ public class InputController : MonoBehaviour
     public InputDevice GetActiveInputDevice()
     {
         // 只有本帧真的出现有效输入才返回设备；没有输入时保持上一次模式。
+        if (Touchscreen.current != null
+            && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
+        {
+            return Touchscreen.current;
+        }
+
         if (Gamepad.current != null
             && (Gamepad.current.leftStick.ReadValue().magnitude > 0.1f
                 || Gamepad.current.buttonSouth.isPressed))
@@ -198,7 +210,13 @@ public class InputController : MonoBehaviour
     private void DetectInputDevice()
     {
         InputDevice activeDevice = GetActiveInputDevice();
-        if (activeDevice is Gamepad)
+        if (activeDevice is Touchscreen)
+        {
+            // 触屏沿用 KeyboardMouse 的技能提示类型，但 UI 焦点按触屏规则处理。
+            lastKeyboardMouseInputWasMouse = true;
+            SetCurrentDeviceType(PlayerInputDeviceType.KeyboardMouse);
+        }
+        else if (activeDevice is Gamepad)
         {
             SetCurrentDeviceType(PlayerInputDeviceType.Gamepad);
         }
@@ -253,7 +271,10 @@ public class InputController : MonoBehaviour
     private void ApplyDeviceMode(PlayerInputDeviceType deviceType, bool forceSelection = false)
     {
         bool enableGamepadMode = deviceType == PlayerInputDeviceType.Gamepad;
-        bool showMouse = isUiMode && deviceType == PlayerInputDeviceType.KeyboardMouse;
+        bool suppressNavigationSelection = ShouldSuppressNavigationSelection();
+        bool showMouse = isUiMode
+            && deviceType == PlayerInputDeviceType.KeyboardMouse
+            && !suppressNavigationSelection;
 
         // 战斗模式始终隐藏鼠标；只有进入 UI 且当前使用键鼠时才显示。
         Cursor.visible = showMouse;
@@ -265,9 +286,10 @@ public class InputController : MonoBehaviour
             return;
         }
 
-        if (!isUiMode)
+        if (!isUiMode || suppressNavigationSelection)
         {
             activeEventSystem.SetSelectedGameObject(null);
+            pendingDefaultSelection = false;
         }
         else if (enableGamepadMode || !lastKeyboardMouseInputWasMouse)
         {
@@ -298,6 +320,19 @@ public class InputController : MonoBehaviour
         EventSystem activeEventSystem = GetActiveEventSystem();
         if (activeEventSystem == null || !isUiMode)
         {
+            return;
+        }
+
+        if (ShouldSuppressNavigationSelection())
+        {
+            // 触屏按钮只有按下反馈，不保留键盘/手柄导航焦点。
+            // 这也会清除 InputSystemUIInputModule 在点击后自动留下的 Selected 状态。
+            if (activeEventSystem.currentSelectedGameObject != null)
+            {
+                activeEventSystem.SetSelectedGameObject(null);
+            }
+
+            pendingDefaultSelection = false;
             return;
         }
 
@@ -357,6 +392,26 @@ public class InputController : MonoBehaviour
 
         Selectable selectable = selection.GetComponent<Selectable>();
         return selectable != null && selectable.IsActive() && selectable.IsInteractable();
+    }
+
+    /// <summary>
+    /// 判断当前是否应采用纯触屏 UI 规则，触屏模式不会保留 Selectable 导航焦点。
+    /// 使用注意：Android/iOS 自动启用；编辑器只有 Device Simulator 提供 Touchscreen 时启用。
+    /// 实体手柄连接并成为当前设备后仍允许正常的导航选中效果。
+    /// </summary>
+    private static bool ShouldSuppressNavigationSelection()
+    {
+#if UNITY_ANDROID || UNITY_IOS
+        bool touchEnvironment = true;
+#elif UNITY_EDITOR
+        bool touchEnvironment = Touchscreen.current != null;
+#else
+        bool touchEnvironment = false;
+#endif
+
+        bool activeGamepadAvailable = CurrentDeviceType == PlayerInputDeviceType.Gamepad
+            && Gamepad.current != null;
+        return touchEnvironment && !activeGamepadAvailable;
     }
 
     /// <summary>

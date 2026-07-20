@@ -16,6 +16,15 @@ public sealed class MobileHudController : MonoBehaviour
     [SerializeField] private RectTransform rageButton;
     [SerializeField] private RectTransform dimensionSlashButton;
 
+    [Header("移动端技能图标")]
+    [SerializeField] private RectTransform magnetVisual;
+    [SerializeField] private RectTransform rageVisual;
+    [SerializeField] private RectTransform dimensionSlashVisual;
+    [SerializeField] private float magnetVisualSize = 188f;
+    [SerializeField] private float rageVisualSize = 124f;
+    [SerializeField] private float dimensionSlashVisualSize = 118f;
+    [SerializeField] private float cooldownOverlaySize = 112f;
+
     [Header("战斗 HUD Safe Area")]
     [SerializeField] private Canvas rootCanvas;
     [SerializeField] private RectTransform healthBar;
@@ -38,6 +47,7 @@ public sealed class MobileHudController : MonoBehaviour
 
     private Rect lastSafeArea;
     private Vector2Int lastScreenSize;
+    private float lastCanvasScaleFactor = -1f;
     private Vector2 healthBarStartPosition;
     private Vector2 experienceBarStartPosition;
     private Vector2 timeDisplayStartPosition;
@@ -105,6 +115,11 @@ public sealed class MobileHudController : MonoBehaviour
         ArrangeSkillButton(magnetButton, 0);
         ArrangeSkillButton(rageButton, 1);
         ArrangeSkillButton(dimensionSlashButton, 2);
+
+        // 三张原图虽然都是 32x32，但透明边距不同，使用不同 Rect 尺寸后可见图案才会接近同样大小。
+        ArrangeSkillVisual(magnetVisual, magnetVisualSize, cooldownOverlaySize);
+        ArrangeSkillVisual(rageVisual, rageVisualSize, cooldownOverlaySize);
+        ArrangeSkillVisual(dimensionSlashVisual, dimensionSlashVisualSize, cooldownOverlaySize);
     }
 
     /// <summary>
@@ -131,6 +146,40 @@ public sealed class MobileHudController : MonoBehaviour
     }
 
     /// <summary>
+    /// 统一移动端技能图标和冷却遮罩的中心位置与显示尺寸。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：size 指的是完整 Sprite Rect 的尺寸；不同图片的透明边距不同，因此不应强制使用同一个数值。
+    /// </remarks>
+    private static void ArrangeSkillVisual(RectTransform visual, float size, float overlaySize)
+    {
+        if (visual == null || size <= 0f)
+        {
+            return;
+        }
+
+        visual.anchorMin = new Vector2(0.5f, 0.5f);
+        visual.anchorMax = new Vector2(0.5f, 0.5f);
+        visual.pivot = new Vector2(0.5f, 0.5f);
+        visual.anchoredPosition = Vector2.zero;
+        visual.sizeDelta = new Vector2(size, size);
+        visual.localScale = Vector3.one;
+
+        // 当前三个技能都把径向冷却 Image 放在图标的第一个子节点中。
+        // 遮罩没有技能原图的透明边距，因此统一使用独立的可见尺寸，避免进入 CD 后大小突然变化。
+        if (visual.childCount > 0 && visual.GetChild(0) is RectTransform cooldownOverlay)
+        {
+            float safeOverlaySize = overlaySize > 0f ? overlaySize : size;
+            cooldownOverlay.anchorMin = new Vector2(0.5f, 0.5f);
+            cooldownOverlay.anchorMax = new Vector2(0.5f, 0.5f);
+            cooldownOverlay.pivot = new Vector2(0.5f, 0.5f);
+            cooldownOverlay.anchoredPosition = Vector2.zero;
+            cooldownOverlay.sizeDelta = new Vector2(safeOverlaySize, safeOverlaySize);
+            cooldownOverlay.localScale = Vector3.one;
+        }
+    }
+
+    /// <summary>
     /// 根据当前屏幕 Safe Area 更新移动端安全区锚点。
     /// </summary>
     /// <remarks>
@@ -145,7 +194,11 @@ public sealed class MobileHudController : MonoBehaviour
 
         Rect safeArea = Screen.safeArea;
         Vector2Int screenSize = new Vector2Int(Screen.width, Screen.height);
-        if (!force && safeArea == lastSafeArea && screenSize == lastScreenSize)
+        float canvasScaleFactor = GetCanvasScaleFactor();
+        if (!force
+            && safeArea == lastSafeArea
+            && screenSize == lastScreenSize
+            && Mathf.Approximately(canvasScaleFactor, lastCanvasScaleFactor))
         {
             return;
         }
@@ -162,10 +215,11 @@ public sealed class MobileHudController : MonoBehaviour
         safeAreaRoot.offsetMin = Vector2.zero;
         safeAreaRoot.offsetMax = Vector2.zero;
 
-        ApplyGameplayHudInsets(safeArea);
+        ApplyGameplayHudInsets(safeArea, canvasScaleFactor);
 
         lastSafeArea = safeArea;
         lastScreenSize = screenSize;
+        lastCanvasScaleFactor = canvasScaleFactor;
     }
 
     /// <summary>
@@ -188,12 +242,8 @@ public sealed class MobileHudController : MonoBehaviour
     /// <remarks>
     /// 使用注意：这里只移动血条、经验、时间和击杀数，不会改变暂停、升级或技能逻辑。
     /// </remarks>
-    private void ApplyGameplayHudInsets(Rect safeArea)
+    private void ApplyGameplayHudInsets(Rect safeArea, float scaleFactor)
     {
-        float scaleFactor = rootCanvas != null && rootCanvas.scaleFactor > 0f
-            ? rootCanvas.scaleFactor
-            : 1f;
-
         float leftInset = safeArea.xMin / scaleFactor;
         float rightInset = (Screen.width - safeArea.xMax) / scaleFactor;
         float topInset = (Screen.height - safeArea.yMax) / scaleFactor;
@@ -202,6 +252,19 @@ public sealed class MobileHudController : MonoBehaviour
         SetAnchoredPosition(experienceBar, experienceBarStartPosition + new Vector2(leftInset, -topInset));
         SetAnchoredPosition(timeDisplay, timeDisplayStartPosition + new Vector2(0f, -topInset));
         SetAnchoredPosition(killCountDisplay, killCountStartPosition + new Vector2(-rightInset, -topInset));
+    }
+
+    /// <summary>
+    /// 读取当前 Canvas 的实际缩放系数，供屏幕像素和 UI 设计坐标之间换算。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：CanvasScaler 可能在 Awake 之后才更新 scaleFactor，因此调用方必须持续检测该值是否变化。
+    /// </remarks>
+    private float GetCanvasScaleFactor()
+    {
+        return rootCanvas != null && rootCanvas.scaleFactor > 0f
+            ? rootCanvas.scaleFactor
+            : 1f;
     }
 
     /// <summary>
