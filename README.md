@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-`Pixel Fantasy II` 是一款基于 Unity 开发的 2D 像素风动作生存类项目。玩家在关卡中通过移动、击杀敌人、拾取经验、升级武器和释放技能来推进战斗流程。
+`Pixel Fantasy II` 是一款基于 Unity 开发的 2D 像素风动作生存类项目，当前支持 Windows PC 与 Android。玩家在关卡中通过移动、击杀敌人、拾取经验、升级武器和释放技能来推进战斗流程。
 
 本项目定位为学习与求职展示 Demo，重点展示核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地存档、事件驱动 UI、对象池、启动热更新流程。
 
@@ -13,8 +13,15 @@
 - 敌人刷怪、追踪、受伤、死亡、掉落和结算流程。
 - 技能解锁、分数存档、设置存档和本局运行数据管理。
 - Start 场景加载条展示 Lua 更新、资源检查和资源下载进度。
+- PC / Android 多端适配，支持键鼠、手柄和触屏操作，并针对不同宽高比与移动端 Safe Area 调整 UI。
 
 ## 技术亮点
+
+- **PC / Android 多端适配**
+  采用“共享玩法逻辑 + 平台输入适配 + 平台 UI 表现”的结构。键盘、实体手柄和移动端虚拟摇杆统一接入 Unity Input System 的 `Player/Move` Action，最终复用同一个 `Player.OnMove()` 与角色移动逻辑。Android 通过 `MobileHudController` 启用虚拟摇杆、触屏技能栏和移动端暂停按钮；PC 保留原有键鼠、手柄提示和设置项。
+
+- **多分辨率与 Safe Area 适配**
+  UI 以 `1920x1080` 为设计基准，通过 Canvas 缩放和等比画框适配 4:3、16:9、16:10 与超宽屏。移动端额外读取 `Screen.safeArea`，避让刘海、挖孔和系统手势区域。技能按钮复用原有对象并只调整父节点、位置和尺寸，因此 PC 与 Android 共用技能解锁、冷却、点击事件和 Addressables 图标逻辑。
 
 - **xLua 玩法逻辑热更新**  
   C# 保留 Unity 生命周期、Inspector 引用、对象池、动画、物理和 UI，Lua 接管武器、技能、敌人、掉落、刷怪、玩家数值等可变规则。
@@ -55,6 +62,42 @@
 - **多语言切换**  
   接入 `Localization`，通过语言下拉框切换 `LocalizationSettings.SelectedLocale`，并将语言选择保存到 `settings.json`，重启后自动恢复用户上次选择的语言。
 
+## 多端适配架构
+
+```mermaid
+flowchart TD
+    PC["Windows：键盘 / 鼠标 / 手柄"]
+    Android["Android：触屏 / 虚拟摇杆"]
+    Input["Unity Input System"]
+    Action["统一 InputAction"]
+    Gameplay["共享 C# 玩法逻辑"]
+    Lua["共享 xLua 规则"]
+    UI["平台 UI 适配层"]
+    Assets["按 BuildTarget 构建 Addressables"]
+
+    PC --> Input
+    Android --> Input
+    Input --> Action
+    Action --> Gameplay
+    Gameplay --> Lua
+    Gameplay --> UI
+    Gameplay --> Assets
+```
+
+多端实现分工：
+
+```text
+Unity Input System       统一键盘、手柄与虚拟摇杆输入
+InputController          记录当前设备类型，管理鼠标、EventSystem 焦点和输入提示
+MobileHudController      启用 Android 专属 HUD、重排技能按钮并应用战斗 Safe Area
+MobileSafeAreaLayout     适配设置页、地图选择页及不同屏幕宽高比
+Player / SkillController PC 与 Android 共享角色移动、技能、冷却和解锁逻辑
+xLua                     跨平台共享可热更玩法规则
+Addressables             资源 key 跨平台统一，Bundle 按 BuildTarget 分别构建
+```
+
+当前实现的是多平台客户端适配，不包含账号系统、云存档或 PC 与手机之间的实时存档同步。`settings.json` 和 `save_data.json` 会保存在各设备自己的 `Application.persistentDataPath` 中。
+
 ## 使用的插件、官方包与 Unity 系统
 
 ### 第三方插件
@@ -64,7 +107,7 @@
 
 ### Unity 官方包
 
-- **Input System**：接收玩家移动与技能输入，识别键鼠和手柄设备，并根据当前输入模式切换 UI 图标与焦点。
+- **Input System**：统一接收键鼠、实体手柄和移动端 `OnScreenStick` 输入，并根据当前设备切换 UI 图标、鼠标状态与 EventSystem 焦点。
 - **Addressables**：通过远端 Catalog、Bundle 和资源 key 加载可更新的 Sprite、VFX、武器、敌人及掉落物 Prefab。
 - **Localization**：管理技能、武器、设置界面等文本的多语言切换，并通过文本变化事件刷新当前 UI。
 - **Newtonsoft.Json for Unity**：序列化本地设置、总分和技能解锁进度，并处理文件缺失、字段缺失和 JSON 损坏回退。
@@ -136,7 +179,7 @@ ProjectSettings/               Unity 项目设置
 
 - Unity `2022.3.55f1`
 - Visual Studio 2022
-- Windows
+- Windows / Android
 - xLua
 - Addressables
 - Newtonsoft.Json
