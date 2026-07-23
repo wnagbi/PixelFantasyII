@@ -13,15 +13,15 @@
 - 敌人刷怪、追踪、受伤、死亡、掉落和结算流程。
 - 技能解锁、分数存档、设置存档和本局运行数据管理。
 - Start 场景加载条展示 Lua 更新、资源检查和资源下载进度。
-- PC / Android 多端适配，支持键鼠、手柄和触屏操作，并针对不同宽高比与移动端 Safe Area 调整 UI。
+- PC / Android 共用核心玩法逻辑，支持键鼠、实体手柄和移动端触屏操作；移动端 UI 与不同屏幕比例适配仍在持续完善。
 
 ## 技术亮点
 
-- **PC / Android 多端适配**
-  采用“共享玩法逻辑 + 平台输入适配 + 平台 UI 表现”的结构。键盘、实体手柄和移动端虚拟摇杆统一接入 Unity Input System 的 `Player/Move` Action，最终复用同一个 `Player.OnMove()` 与角色移动逻辑。Android 通过 `MobileHudController` 启用虚拟摇杆、触屏技能栏和移动端暂停按钮；PC 保留原有键鼠、手柄提示和设置项。
+- **PC / Android 输入架构**
+  采用“共享玩法逻辑 + 平台输入适配 + 平台 UI 表现”的结构。键盘、实体手柄和移动端虚拟摇杆统一接入 Unity Input System 的 `Player/Move` Action，最终复用同一个 `Player.OnMove()` 与角色移动逻辑。Android 通过 `MobileHudController` 启用虚拟摇杆、触屏技能栏和移动端暂停按钮；PC 保留原有键鼠、手柄提示和桌面分辨率设置。
 
-- **多分辨率与 Safe Area 适配**
-  UI 以 `1920x1080` 为设计基准，通过 Canvas 缩放和等比画框适配 4:3、16:9、16:10 与超宽屏。移动端额外读取 `Screen.safeArea`，避让刘海、挖孔和系统手势区域。技能按钮复用原有对象并只调整父节点、位置和尺寸，因此 PC 与 Android 共用技能解锁、冷却、点击事件和 Addressables 图标逻辑。
+- **移动端 Safe Area 基础适配（持续完善）**
+  UI 以 `1920x1080` 为设计基准，使用 Canvas Scaler、锚点和 `Screen.safeArea` 处理基础缩放与安全区域。战斗 HUD 已接入移动端布局，技能按钮继续复用原有解锁、冷却、点击事件和 Addressables 图标逻辑。由于模拟器与真机在宽高比、DPI、系统导航区域上存在差异，设置页、地图选择页及部分非常规分辨率仍在继续调整和真机验证，本项目暂不将其描述为完整的全分辨率适配方案。
 
 - **xLua 玩法逻辑热更新**  
   C# 保留 Unity 生命周期、Inspector 引用、对象池、动画、物理和 UI，Lua 接管武器、技能、敌人、掉落、刷怪、玩家数值等可变规则。
@@ -90,7 +90,7 @@ flowchart TD
 Unity Input System       统一键盘、手柄与虚拟摇杆输入
 InputController          记录当前设备类型，管理鼠标、EventSystem 焦点和输入提示
 MobileHudController      启用 Android 专属 HUD、重排技能按钮并应用战斗 Safe Area
-MobileSafeAreaLayout     适配设置页、地图选择页及不同屏幕宽高比
+MobileSafeAreaLayout     提供 Safe Area 和界面缩放入口，设置页与地图选择页仍在持续调试
 Player / SkillController PC 与 Android 共享角色移动、技能、冷却和解锁逻辑
 xLua                     跨平台共享可热更玩法规则
 Addressables             资源 key 跨平台统一，Bundle 按 BuildTarget 分别构建
