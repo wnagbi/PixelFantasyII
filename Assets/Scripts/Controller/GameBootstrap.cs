@@ -21,6 +21,9 @@ public sealed class GameBootstrap : MonoBehaviour
         // 启动顺序必须固定：先应用 Lua 文件，再初始化 LuaEnv，最后检查资源 Catalog。
         yield return SmoothTo(0.05f, "准备启动...");
 
+        // Android 先把 APK 内置 Lua 解压到 persistentDataPath，确保服务器不可用时仍能离线启动。
+        yield return LuaBuiltinPackageInstaller.Prepare();
+
         yield return LuaHotfixRemoteUpdater.CheckAndApply(
             CreateProgressCallback(0.05f, 0.15f, "检查脚本更新..."));
         yield return SmoothTo(0.15f, "检查脚本更新...");

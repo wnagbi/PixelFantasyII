@@ -1664,7 +1664,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &279512032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2386,7 +2386,6 @@ GameObject:
   - component: {fileID: 375291417}
   - component: {fileID: 375291411}
   - component: {fileID: 375291416}
-  - component: {fileID: 375291420}
   - component: {fileID: 375291421}
   - component: {fileID: 375291422}
   - component: {fileID: 375291423}
@@ -2637,54 +2636,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
---- !u!114 &375291420
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 375291410}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e9d86a23627891842aa2e22da1926f12, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tasks: []
-  taskName: {fileID: 1136070177}
-  taskDescription: {fileID: 661931571}
-  taskStatus: {fileID: 1414574633}
-  taskRewards: {fileID: 74325275}
-  isHaveTask: 1
-  taskIndex: 1
-  selectWeapon:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 375291414}
-        m_TargetAssemblyTypeName: WeaponSelectController, Assembly-CSharp
-        m_MethodName: WeapSelect
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 375291421}
-        m_TargetAssemblyTypeName: GameController, Assembly-CSharp
-        m_MethodName: SelectOpen
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  status: 0
-  xmlTaskFile: {fileID: 4900000, guid: db7b9f84db3a4c340ac3a75065d83747, type: 3}
 --- !u!114 &375291421
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3219,7 +3170,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &454571493
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4757,7 +4708,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -72}
+  m_AnchoredPosition: {x: 54, y: -55.29}
   m_SizeDelta: {x: 270.3264, y: 61.2866}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &621450864
@@ -10130,7 +10081,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -262, y: -63.329956}
+  m_AnchoredPosition: {x: -379, y: -55.29}
   m_SizeDelta: {x: 270.3264, y: 61.2866}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1613086470
@@ -13348,7 +13299,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &910000000000000011
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13441,9 +13392,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 0}
-  m_AnchoredPosition: {x: -190, y: 190}
+  m_AnchoredPosition: {x: -334, y: 267}
   m_SizeDelta: {x: 280, y: 280}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0.49999997, y: 0.5}
 --- !u!114 &910000000000000032
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13629,9 +13580,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -96, y: -96}
+  m_AnchoredPosition: {x: -107, y: -56}
   m_SizeDelta: {x: 112, y: 112}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0.50000006, y: 0.5}
 --- !u!114 &910000000000000052
 MonoBehaviour:
   m_ObjectHideFlags: 0

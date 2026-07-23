@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -15,7 +16,8 @@ public static class HotfixLuaBuildUtility
     // StreamingAssets 会被 Unity 打进包体，因此这里作为包内基础 Lua 回退目录。
     public const string TargetPath = "Assets/StreamingAssets/Lua";
 
-
+    // Android 不能使用 File API 直接读取 APK 内的散文件，因此同时生成一个可通过 UnityWebRequest 读取的 zip。
+    public const string BuiltinPackagePath = "Assets/StreamingAssets/LuaBuiltin.zip";
 
     /// <summary>
     /// 尝试执行 TrySyncLuaToStreamingAssets，并通过返回值表示本次操作是否成功。
@@ -46,8 +48,10 @@ public static class HotfixLuaBuildUtility
 
             // 只复制运行时需要的 Lua 文件，然后刷新 Unity 资源数据库。
             CopyLuaDirectory(sourceFullPath, targetFullPath);
+            CreateBuiltinPackage(sourceFullPath, Path.GetFullPath(BuiltinPackagePath));
             AssetDatabase.Refresh();
             Debug.Log($"[Hotfix] Synced Lua files to {targetFullPath}");
+            Debug.Log($"[Hotfix] Built offline Lua package: {Path.GetFullPath(BuiltinPackagePath)}");
             return true;
         }
         catch (Exception ex)
@@ -95,6 +99,48 @@ public static class HotfixLuaBuildUtility
             }
 
             File.Copy(file, targetFile, true);
+        }
+    }
+
+    /// <summary>
+    /// 把全部基础 Lua 打成供 Android 首包读取的离线 zip。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：压缩包根目录必须直接包含 main.lua；不要把 Assets/Lua 目录本身再包一层。
+    /// </remarks>
+    private static void CreateBuiltinPackage(string sourceRoot, string packagePath)
+    {
+        string packageDirectory = Path.GetDirectoryName(packagePath);
+        if (!string.IsNullOrEmpty(packageDirectory))
+        {
+            Directory.CreateDirectory(packageDirectory);
+        }
+
+        if (File.Exists(packagePath))
+        {
+            File.Delete(packagePath);
+        }
+
+        using (FileStream zipStream = File.Create(packagePath))
+        using (ZipArchive archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+        {
+            foreach (string file in Directory.GetFiles(sourceRoot, "*", SearchOption.AllDirectories))
+            {
+                if (file.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string relativePath = Path.GetRelativePath(sourceRoot, file).Replace('\\', '/');
+                ZipArchiveEntry entry = archive.CreateEntry(
+                    relativePath,
+                    System.IO.Compression.CompressionLevel.Optimal);
+                using (Stream entryStream = entry.Open())
+                using (FileStream sourceStream = File.OpenRead(file))
+                {
+                    sourceStream.CopyTo(entryStream);
+                }
+            }
         }
     }
 }

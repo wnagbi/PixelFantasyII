@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -15,6 +16,9 @@ public sealed class LuaManager : MonoBehaviour
 
     // 防止重复 Init。LuaEnv 一个运行期只需要初始化一次，Reload 时才会 Dispose 后重建。
     private bool initialized;
+
+    // 缓存本次 LuaEnv 中已经确认加载失败的模块，避免 fallback 路径每次查询都重复抛异常和打印堆栈。
+    private readonly HashSet<string> failedModules = new HashSet<string>(StringComparer.Ordinal);
 
     // 单例入口。任何系统只要访问 LuaManager.Instance，就能确保场景里有一个 LuaManager。
     public static LuaManager Instance
@@ -146,13 +150,27 @@ public sealed class LuaManager : MonoBehaviour
     public bool TryRequireTable(string moduleName, out LuaTable table)
     {
         table = null;
+
+        if (string.IsNullOrWhiteSpace(moduleName) || failedModules.Contains(moduleName))
+        {
+            return false;
+        }
+
         try
         {
             table = RequireTable(moduleName);
-            return table != null;
+            if (table != null)
+            {
+                return true;
+            }
+
+            failedModules.Add(moduleName);
+            Debug.LogWarning($"[LuaManager] Module '{moduleName}' returned no table. C# fallback will be used.");
+            return false;
         }
         catch (Exception ex)
         {
+            failedModules.Add(moduleName);
             Debug.LogWarning($"[LuaManager] Failed to require '{moduleName}': {ex.Message}");
             return false;
         }
@@ -185,6 +203,7 @@ public sealed class LuaManager : MonoBehaviour
             return;
         }
 
+        failedModules.Remove(moduleName);
         SafeDoString($"package.loaded['{moduleName}'] = nil", $"clear:{moduleName}");
     }
 
@@ -226,6 +245,7 @@ public sealed class LuaManager : MonoBehaviour
     public void Dispose()
     {
         initialized = false;
+        failedModules.Clear();
         if (luaEnv == null)
         {
             return;
@@ -282,7 +302,7 @@ public sealed class LuaManager : MonoBehaviour
 }
 
 // LuaLoader 决定 require 时从哪里找 Lua 文件。
-// 当前项目加载优先级：LuaHotfix > StreamingAssets/Lua > Assets/Lua。
+// 当前项目加载优先级：LuaHotfix > LuaBuiltin > StreamingAssets/Lua > Assets/Lua。
 public static class LuaLoader
 {
     // 打包后真正热更覆盖目录。用户本地替换这里的 Lua 文件即可热更。
@@ -290,6 +310,9 @@ public static class LuaLoader
 
     // 包内基础 Lua。打包时会把 Assets/Lua 同步到这里。
     public static readonly string StreamingRoot = Path.Combine(Application.streamingAssetsPath, "Lua");
+
+    // Android 启动时从 APK 内 LuaBuiltin.zip 提取出的离线基础 Lua。
+    public static readonly string BuiltinRoot = LuaBuiltinPackageInstaller.BuiltinRoot;
 
     // 编辑器开发目录。没有热更文件和 StreamingAssets 文件时才回退到这里。
     public static readonly string AssetRoot = Path.Combine(Application.dataPath, "Lua");
@@ -313,7 +336,14 @@ public static class LuaLoader
             return hotfixBytes;
         }
 
-        // 第二优先级：包内 StreamingAssets。
+        // 第二优先级：Android 从 APK 提取出的离线基础 Lua。
+        if (TryRead(Path.Combine(BuiltinRoot, luaFile), out byte[] builtinBytes))
+        {
+            filepath = Path.Combine(BuiltinRoot, luaFile);
+            return builtinBytes;
+        }
+
+        // 第三优先级：Windows 等可直接访问平台的包内 StreamingAssets。
         if (TryRead(Path.Combine(StreamingRoot, luaFile), out byte[] streamingBytes))
         {
             filepath = Path.Combine(StreamingRoot, luaFile);

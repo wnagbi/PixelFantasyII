@@ -51,7 +51,11 @@ public class GameSettingController : MonoBehaviour
         GameSettingsStore.Load();
 
         InitializeLanguageDropDown();
-        InitialzieResolutionDropDown();
+        if (SupportsRuntimeResolutionSettings())
+        {
+            InitialzieResolutionDropDown();
+        }
+
         statusCheck();
 
         prevTime = Time.realtimeSinceStartup;
@@ -78,6 +82,11 @@ public class GameSettingController : MonoBehaviour
 
     public void SetResolution(int resolutionIndex)
     {
+        if (!SupportsRuntimeResolutionSettings())
+        {
+            return;
+        }
+
         if (!TryGetResolution(resolutionIndex, out Resolution resolution))
         {
             return;
@@ -241,7 +250,11 @@ public class GameSettingController : MonoBehaviour
 
     public void statusCheck()
     {
-        judgeFullScreen();
+        if (SupportsRuntimeResolutionSettings())
+        {
+            judgeFullScreen();
+        }
+
         judgeVibrate();
         InitVolume();
     }
@@ -264,6 +277,11 @@ public class GameSettingController : MonoBehaviour
 
     public void judgeFullScreen()
     {
+        if (!SupportsRuntimeResolutionSettings())
+        {
+            return;
+        }
+
         bool fullscreen = GameSettingsStore.Current.fullscreen;
         Screen.fullScreen = fullscreen;
         if (fullScreenController != null)
@@ -274,6 +292,11 @@ public class GameSettingController : MonoBehaviour
 
     public void ToggleFullScreen(bool isFullScreen)
     {
+        if (!SupportsRuntimeResolutionSettings())
+        {
+            return;
+        }
+
         GameSettingsData settings = GameSettingsStore.Current;
         settings.fullscreen = isFullScreen;
         Screen.fullScreen = isFullScreen;
@@ -356,5 +379,20 @@ public class GameSettingController : MonoBehaviour
         {
             mixer.SetFloat(parameterName, value);
         }
+    }
+
+    /// <summary>
+    /// 判断当前平台是否允许玩家修改窗口分辨率和全屏状态。
+    /// </summary>
+    /// <remarks>
+    /// 使用注意：Android/iOS 的方向和分辨率由系统与 Player Settings 管理。
+    /// </remarks>
+    private static bool SupportsRuntimeResolutionSettings()
+    {
+#if UNITY_STANDALONE || UNITY_EDITOR
+        return true;
+#else
+        return false;
+#endif
     }
 }
