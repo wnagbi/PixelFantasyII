@@ -17,10 +17,10 @@
 
 ## 技术亮点
 
-- **PC / Android 输入架构**
+- **PC / Android 输入架构**  
   采用“共享玩法逻辑 + 平台输入适配 + 平台 UI 表现”的结构。键盘、实体手柄和移动端虚拟摇杆统一接入 Unity Input System 的 `Player/Move` Action，最终复用同一个 `Player.OnMove()` 与角色移动逻辑。Android 通过 `MobileHudController` 启用虚拟摇杆、触屏技能栏和移动端暂停按钮；PC 保留原有键鼠、手柄提示和桌面分辨率设置。
 
-- **移动端 Safe Area 基础适配（持续完善）**
+- **移动端 Safe Area 基础适配（持续完善）**  
   UI 以 `1920x1080` 为设计基准，使用 Canvas Scaler、锚点和 `Screen.safeArea` 处理基础缩放与安全区域。战斗 HUD 已接入移动端布局，技能按钮继续复用原有解锁、冷却、点击事件和 Addressables 图标逻辑。由于模拟器与真机在宽高比、DPI、系统导航区域上存在差异，设置页、地图选择页及部分非常规分辨率仍在继续调整和真机验证，本项目暂不将其描述为完整的全分辨率适配方案。
 
 - **xLua 玩法逻辑热更新**  
