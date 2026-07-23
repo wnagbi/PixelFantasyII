@@ -4,7 +4,7 @@
 
 `Pixel Fantasy II` 是一款基于 Unity 开发的 2D 像素风动作生存类项目，当前支持 Windows PC 与 Android。玩家在关卡中通过移动、击杀敌人、拾取经验、升级武器和释放技能来推进战斗流程。
 
-本项目定位为学习与求职展示 Demo，重点展示核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地存档、事件驱动 UI、对象池、启动热更新流程。
+本项目定位为学习与求职展示 Demo，重点展示核心玩法、xLua 玩法逻辑热更新、Addressables 资源热更新、JSON 本地存档、事件驱动 UI、对象池、启动热更新流程，多端适配。
 
 ## 项目特色
 
@@ -30,7 +30,7 @@
   启动时请求 Lua manifest，对比版本后下载 zip，校验大小和 SHA256，再解压到 `persistentDataPath/LuaHotfix`。服务器不可用时回退本地 Lua。
 
 - **Unity Editor 热更新一键构建工具**  
-  基于 `EditorWindow` 和 `MenuItem` 编写热更新构建面板，将 Lua 同步、Lua Zip 与 manifest 生成、Addressables HTTP 配置、远端 Catalog 和 Bundle 构建整合为单步与一键流程；同时接入 `IPreprocessBuildWithReport`，在构建客户端前自动同步包内 Lua。工具支持构建失败中止、异常日志、服务器目录定位和测试 URL 输出，减少重复人工操作与发布配置错误。
+  基于 `EditorWindow` 和 `MenuItem` 编写热更新构建面板，将 Lua 同步、Lua Zip 与 manifest 生成、Addressables HTTP 配置、远端 Catalog 和 Bundle 构建整合为单步与一键流程；同时接入 `IPreprocessBuildWithReport`，在构建客户端前自动同步包内 Lua。
 
 - **Addressables HTTP 资源热更新**  
   使用远端 Catalog 和 Bundle，通过本地 HTTP 服务模拟商业化资源热更新流程，支持 Sprite、VFX 和 Prefab 更新。
