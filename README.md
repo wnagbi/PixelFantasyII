@@ -1,5 +1,7 @@
 # Pixel Fantasy II
 
+🎬 **项目演示视频：** [在哔哩哔哩观看](https://www.bilibili.com/video/BV1Xe3M63EaW)
+
 ## 项目简介
 
 `Pixel Fantasy II` 是一款基于 Unity 开发的 2D 像素风动作生存类项目，当前支持 Windows PC 与 Android。玩家在关卡中通过移动、击杀敌人、拾取经验、升级武器和释放技能来推进战斗流程。
